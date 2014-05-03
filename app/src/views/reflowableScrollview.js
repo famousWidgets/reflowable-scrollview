@@ -4,6 +4,7 @@ define(function(require, exports, module) {
     var Surface = require('famous/core/Surface');
     var Transform = require('famous/core/Transform');
     var StateModifier = require('famous/modifiers/StateModifier');
+    var ScrollView = require('famous/views/ScrollView');
     var ViewSequence = require('famous/core/ViewSequence');
 
     /*
@@ -24,12 +25,15 @@ the width/height.
 
 */
 
-    function reflowableScrollview (array) {
-        View.apply(this, arguments);
-        this.vs = new ViewSequence(array);
+    function reflowableScrollview (options) {
+        ScrollView.apply(this, arguments);
+        this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
+        this.setOptions(options);
+
+        console.log("scroller:", this._scroller);
     }
 
-    reflowableScrollview.prototype = Object.create(View.prototype);
+    reflowableScrollview.prototype = Object.create(ScrollView.prototype);
     reflowableScrollview.prototype.constructor = reflowableScrollview;
 
     reflowableScrollview.DEFAULT_OPTIONS = {

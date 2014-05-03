@@ -6,6 +6,7 @@ define(function(require, exports, module) {
     var Transform = require('famous/core/Transform');
     var ImageSurface = require('famous/surfaces/ImageSurface');
     var ReflowableScrollview = require('views/reflowableScrollview');
+    var Utility = require('famous/utilities/Utility');
 
     // your app here
     var famousLogo = new ImageSurface({
@@ -31,8 +32,12 @@ define(function(require, exports, module) {
     var mainContext = Engine.createContext();
     var logos = [famousLogo, hackreactorLogo];
 
-    var reflowable = new ReflowableScrollview(logos);
+    var reflowable = new ReflowableScrollview({
+        direction: Utility.Direction.X
+    });
     
+    reflowable.sequenceFrom(logos);
+
     // make available on window for testing
     window.reflowable = reflowable;
 
