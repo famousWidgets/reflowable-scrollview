@@ -4,6 +4,7 @@ define(function(require, exports, module) {
     var Surface = require('famous/core/Surface');
     var Transform = require('famous/core/Transform');
     var StateModifier = require('famous/modifiers/StateModifier');
+    var ViewSequence = require('famous/core/ViewSequence');
 
     /*
      * @name reflowableScrollview
@@ -23,8 +24,9 @@ the width/height.
 
 */
 
-    function reflowableScrollview() {
+    function reflowableScrollview (array) {
         View.apply(this, arguments);
+        this.vs = new ViewSequence(array);
     }
 
     reflowableScrollview.prototype = Object.create(View.prototype);
