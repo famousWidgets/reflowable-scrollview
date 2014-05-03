@@ -21,7 +21,7 @@ define(function(require, exports, module) {
     var centerSpinModifier = new Modifier({
         origin: [0.5, 0.5],
         transform : function() {
-            return Transform.rotateY(.002 * (Date.now() - initialTime));
+            return Transform.rotateY(0.002 * (Date.now() - initialTime));
         }
     });
 
