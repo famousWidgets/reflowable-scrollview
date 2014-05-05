@@ -9,17 +9,26 @@ define(function(require, exports, module) {
     var Utility = require('famous/utilities/Utility');
 
     // your app here
-    var famousLogo = new ImageSurface({
-        size: [200, 200],
-        content: '/content/images/famous_logo.png',
-        classes: ['backfaceVisibility']
-    });
+    var logos = [];
+    var famousLogo;
+    var hackreactorLogo;
+    var num = 20;
 
-    var hackreactorLogo = new ImageSurface({
-        size: [200, 200],
-        content: '/content/images/hack_reactor.png',
-        classes: ['backfaceVisibility']
-    });
+    for (var i = 0; i < num; i += 1) {
+        hackreactorLogo = new ImageSurface({
+            size: [200, 200],
+            content: '/content/images/hack_reactor.png',
+            classes: ['backfaceVisibility']
+        });
+
+        // famousLogo = new ImageSurface({
+        //     size: [200, 200],
+        //     content: '/content/images/famous_logo.png',
+        //     classes: ['backfaceVisibility']
+        // });
+
+        logos.push(hackreactorLogo);
+    }
 
     // var initialTime = Date.now();
     // var centerSpinModifier = new Modifier({
@@ -30,12 +39,11 @@ define(function(require, exports, module) {
     // });
 
     var mainContext = Engine.createContext();
-    var logos = [famousLogo, hackreactorLogo];
 
     var reflowable = new ReflowableScrollview({
         direction: Utility.Direction.X
     });
-    
+
     reflowable.sequenceFrom(logos);
 
     // make available on window for testing
