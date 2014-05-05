@@ -11,17 +11,17 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
-        direction: Utility.Direction.X
+        direction: Utility.Direction.Y
     });
 
     var logos = [];
     // var famousLogo;
     // var hackreactorLogo;
-    var num = 20;
+    var num = 100;
 
     for (var i = 0; i < num; i += 1) {
         // hackreactorLogo = new ImageSurface({
-        //     size: [200, 200],
+        //     size: [100, 100],
         //     content: '/content/images/hack_reactor.png',
         //     classes: ['backfaceVisibility']
         // });
@@ -29,10 +29,13 @@ define(function(require, exports, module) {
         var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
         var surface = new Surface({
             size: [100, 100],
+            content: 'i is ' + i,
             properties: {
                 backgroundColor: color
             }
         });
+        // reflowable.subscribe(hackreactorLogo);
+        // logos.push(hackreactorLogo);
         reflowable.subscribe(surface);
         logos.push(surface);
     }

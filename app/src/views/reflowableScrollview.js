@@ -31,7 +31,7 @@ the width/height.
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
 
-        this.previousSize = [undefined, undefined];
+        this._previousSize = [undefined, undefined];
         this._scroller.commit = _customCommit.bind(this);
     }
 
@@ -50,10 +50,10 @@ the width/height.
         var origin = context.origin;
         var size = context.size;
 
-        if (this.previousSize[0] !== size[0] || this.previousSize[1] !== size[1]) {
-            console.log('prev: ', this.previousSize, ' new: ', size);
-            this.previousSize[0] = size[0];
-            this.previousSize[1] = size[1];
+        if (this._previousSize[0] !== size[0] || this._previousSize[1] !== size[1]) {
+            // console.log('prev: ', this.previousSize, ' new: ', size);
+            this._previousSize[0] = size[0];
+            this._previousSize[1] = size[1];
 
             _createNewViewSequence.call(this, context);
         }
@@ -88,23 +88,26 @@ the width/height.
     var _createNewViewSequence = function (context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
-        console.log('this._originalArray: ', this._originalArray);
+        // console.log('this._originalArray: ', this._originalArray);
 
+        // var direction = this.options.direction;
         var contextSize = context.size; // window's size
         var result = [];
 
         var sizeSoFar = 0;
-        var currentView = new View();
+        var currentView = new View({
+            size: [undefined, 100]
+        });
         var item;
         var currentItemSize;
 
         for (var i = 0; i < this._originalArray.length; i += 1) {
-            console.log('i is: ', i);
+            // console.log('i is: ', i);
             item = this._originalArray[i];
-            console.log('item is: ', item);
+            // console.log('item is: ', item);
             currentItemSize = item.getSize()[0];
 
-            if (sizeSoFar + currentItemSize < contextSize) {
+            if (sizeSoFar + currentItemSize < contextSize[0]) {
                 _addToView(currentView, sizeSoFar, item);
                 sizeSoFar += currentItemSize;
             } else {
@@ -113,7 +116,9 @@ the width/height.
 
                 // reset
                 sizeSoFar = 0;
-                currentView = new View();
+                currentView = new View({
+                    size: [undefined, 100]
+                });
 
                 _addToView(currentView, sizeSoFar, item);
                 sizeSoFar += currentItemSize;
