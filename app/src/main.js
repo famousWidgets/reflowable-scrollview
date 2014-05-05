@@ -4,30 +4,37 @@ define(function(require, exports, module) {
     var Engine = require('famous/core/Engine');
     var Modifier = require('famous/core/Modifier');
     var Transform = require('famous/core/Transform');
+    var Surface = require('famous/core/Surface');
     var ImageSurface = require('famous/surfaces/ImageSurface');
     var ReflowableScrollview = require('views/reflowableScrollview');
     var Utility = require('famous/utilities/Utility');
 
     // your app here
+    var reflowable = new ReflowableScrollview({
+        direction: Utility.Direction.X
+    });
+
     var logos = [];
-    var famousLogo;
-    var hackreactorLogo;
+    // var famousLogo;
+    // var hackreactorLogo;
     var num = 20;
 
     for (var i = 0; i < num; i += 1) {
-        hackreactorLogo = new ImageSurface({
-            size: [200, 200],
-            content: '/content/images/hack_reactor.png',
-            classes: ['backfaceVisibility']
-        });
-
-        // famousLogo = new ImageSurface({
+        // hackreactorLogo = new ImageSurface({
         //     size: [200, 200],
-        //     content: '/content/images/famous_logo.png',
+        //     content: '/content/images/hack_reactor.png',
         //     classes: ['backfaceVisibility']
         // });
 
-        logos.push(hackreactorLogo);
+        var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
+        var surface = new Surface({
+            size: [100, 100],
+            properties: {
+                backgroundColor: color
+            }
+        });
+        reflowable.subscribe(surface);
+        logos.push(surface);
     }
 
     // var initialTime = Date.now();
@@ -39,10 +46,6 @@ define(function(require, exports, module) {
     // });
 
     var mainContext = Engine.createContext();
-
-    var reflowable = new ReflowableScrollview({
-        direction: Utility.Direction.X
-    });
 
     reflowable.sequenceFrom(logos);
 

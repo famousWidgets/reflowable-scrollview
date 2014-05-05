@@ -6,6 +6,7 @@ define(function(require, exports, module) {
     var StateModifier = require('famous/modifiers/StateModifier');
     var ScrollView = require('famous/views/ScrollView');
     var ViewSequence = require('famous/core/ViewSequence');
+    var Utility = require('famous/utilities/Utility');
 
     /*
      * @name reflowableScrollview
@@ -30,35 +31,18 @@ the width/height.
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
 
-        // console.log("scroller:", this._scroller);
-        // this._scroller.commit = (function () {
-        //     console.log(this);
-        //     commit.call(this, this._node);
-        // }).bind(this);
+        this.previousSize = [undefined, undefined];
+        this._scroller.commit = _customCommit.bind(this);
     }
 
     reflowableScrollview.prototype = Object.create(ScrollView.prototype);
     reflowableScrollview.prototype.constructor = reflowableScrollview;
 
-    // reflowableScrollview.prototype.sequenceFrom = function sequenceFrom(node) {
-    //     var _scroller = this;
-    //     if (node instanceof Array) node = new ViewSequence({array: node});
-    //     _scroller._node = node;
-    //     _scroller._positionOffset = 0;
-    //     console.log('Inside scroller');
-    // };
+    reflowableScrollview.DEFAULT_OPTIONS = {
+    };
 
     var _customCommit = function (context) {
         // 'this' will be an instance of reflowableScrollview
-        
-        // create a new ViewSequence
-        _createNewViewSequence.call(this);
-
-        // var originalArray = this._node._.array;
-        // this.sequenceFrom(newArray);
-        // console.log('Inside commit');
-        // console.log('Context is: ', context);
-
         var _scroller = this._scroller;
 
         var transform = context.transform;
@@ -66,7 +50,17 @@ the width/height.
         var origin = context.origin;
         var size = context.size;
 
+        if (this.previousSize[0] !== size[0] || this.previousSize[1] !== size[1]) {
+            console.log('prev: ', this.previousSize, ' new: ', size);
+            this.previousSize[0] = size[0];
+            this.previousSize[1] = size[1];
+
+            _createNewViewSequence.call(this, context);
+        }
+
         // reset edge detection on size change
+
+        // we believe this isn't getting executed
         if (!_scroller.options.clipSize && (size[0] !== _scroller._contextSize[0] || size[1] !== _scroller._contextSize[1])) {
             _scroller._onEdge = 0;
             _scroller._contextSize = size;
@@ -91,14 +85,66 @@ the width/height.
         };
     };
 
-    var _createNewViewSequence = function () {
+    var _createNewViewSequence = function (context) {
         // 'this' will be an instance of reflowableScrollview
-        this._originalArray = this._node._.array;
-        
+        this._originalArray = this._originalArray || this._node._.array;
+        console.log('this._originalArray: ', this._originalArray);
+
+        var contextSize = context.size; // window's size
+        var result = [];
+
+        var sizeSoFar = 0;
+        var currentView = new View();
+        var item;
+        var currentItemSize;
+
+        for (var i = 0; i < this._originalArray.length; i += 1) {
+            console.log('i is: ', i);
+            item = this._originalArray[i];
+            console.log('item is: ', item);
+            currentItemSize = item.getSize()[0];
+
+            if (sizeSoFar + currentItemSize < contextSize) {
+                _addToView(currentView, sizeSoFar, item);
+                sizeSoFar += currentItemSize;
+            } else {
+                // result array is populated enough
+                result.push(currentView);
+
+                // reset
+                sizeSoFar = 0;
+                currentView = new View();
+
+                _addToView(currentView, sizeSoFar, item);
+                sizeSoFar += currentItemSize;
+            }
+
+            // remnant items in currentView
+            if (i === this._originalArray.length - 1) {
+                result.push(currentView);
+            }
+        }
+
+        this.sequenceFrom.call(this, result);
     };
 
-    reflowableScrollview.DEFAULT_OPTIONS = {
+    var _addToView = function (view, offsetX, item) {
+        var modifier = new StateModifier({
+            transform: Transform.translate(offsetX, 0, 0)
+        });
+        view.add(modifier).add(item);
     };
+
+    function _sizeForDir(size) {
+        if (!size) size = this._contextSize;
+        var dimension = (this.options.direction === Utility.Direction.X) ? 0 : 1;
+        return (size[dimension] === undefined) ? this._contextSize[dimension] : size[dimension];
+    }
+
+    function _getClipSize() {
+        if (this.options.clipSize) return this.options.clipSize;
+        else return _sizeForDir.call(this, this._contextSize);
+    }
 
     module.exports = reflowableScrollview;
 });
