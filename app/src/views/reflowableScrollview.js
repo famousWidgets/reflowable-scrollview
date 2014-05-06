@@ -80,6 +80,7 @@ define(function(require, exports, module) {
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
+        var accumulatedSizeWithGutter;
         var rowNumber = 0;
         var rowNumberCounter = 1;
         var sequenceItem;
@@ -90,8 +91,17 @@ define(function(require, exports, module) {
             currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
 
             if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
-                 if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
-                _addToView.call(this, currentView, accumulatedSize === 0 ? accumulatedSize : (accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), sequenceItem);
+                if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
+                
+                // first sequenceItem will be on the left / top most edge
+                if (accumulatedSize === 0) {
+                    accumulatedSizeWithGutter = accumulatedSize;
+                } else {
+                    // want to include number of gutters proportional to the number of items in a row
+                    accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++);
+                }
+                
+                _addToView.call(this, currentView, accumulatedSizeWithGutter, sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
@@ -162,7 +172,7 @@ define(function(require, exports, module) {
             }
         }
 
-        return gutterInfo; // [total gutter / number of items, number of items]
+        return gutterInfo; // [[total gutter / number of items, number of items]] => one inner array for each row
     }
 
     function _sizeForDir(size) {
