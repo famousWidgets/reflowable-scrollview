@@ -50,14 +50,20 @@ the width/height.
         var origin = context.origin;
         var size = context.size;
 
-        // reset edge detection on size change
-
-        if (!_scroller.options.clipSize && (size[0] !== _scroller._contextSize[0] || size[1] !== _scroller._contextSize[1])) {
-            _scroller._onEdge = 0;
-            _scroller._contextSize[0] = size[0];
-            _scroller._contextSize[1] = size[1];
+        if (this._previousSize[0] !== size[0] || this._previousSize[1] !== size[1]) {
+            // console.log('prev: ', this.previousSize, ' new: ', size);
+            this._previousSize[0] = size[0];
+            this._previousSize[1] = size[1];
 
             _createNewViewSequence.call(this, context);
+        }
+
+        // reset edge detection on size change
+
+        // we believe this isn't getting executed
+        if (!_scroller.options.clipSize && (size[0] !== _scroller._contextSize[0] || size[1] !== _scroller._contextSize[1])) {
+            _scroller._onEdge = 0;
+            _scroller._contextSize = size;
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -82,6 +88,7 @@ the width/height.
     var _createNewViewSequence = function (context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
+        // console.log('this._originalArray: ', this._originalArray);
 
         var direction = this.options.direction;
         console.log(direction);
@@ -89,26 +96,29 @@ the width/height.
         var result = [];
 
         var sizeSoFar = 0;
-        if (this.options.direction === 0) {
+        if (direction === 0) {
             var currentView = new View({
                 size: [100, undefined]
             });
-        } else if (this.options.direction === 1) {
+        } else if (direction === 1) {
             var currentView = new View({
                 size: [undefined, 100]
             });
         }
         var item;
         var currentItemSize;
+        var maxItemSize = 0;
 
         for (var i = 0; i < this._originalArray.length; i += 1) {
             // console.log('i is: ', i);
             item = this._originalArray[i];
             // console.log('item is: ', item);
-        if (this.options.direction === 0) {
-            currentItemSize = item.getSize()[1];
-            if (sizeSoFar + currentItemSize < contextSize[1]) {
-                _addToView(currentView, sizeSoFar, item);
+
+            currentItemSize = direction === 0 ? item.getSize()[1] : item.getSize()[0];
+
+            if (sizeSoFar + currentItemSize < contextSize[direction === 0 ? 1 : 0]) {
+                 currentItemSize > maxItemSize ? maxItemSize = currentItemSize : false;
+                _addToView.call(this, currentView, sizeSoFar, item);
                 sizeSoFar += currentItemSize;
             } else {
                 // result array is populated enough
@@ -117,34 +127,14 @@ the width/height.
                 // reset
                 sizeSoFar = 0;
                 currentView = new View({
-                    size: [100, undefined]
+                    size: direction === 1 ? [undefined, maxItemSize] : [maxItemSize, undefined]
                 });
 
-                _addToView(currentView, sizeSoFar, item);
+                _addToView.call(this, currentView, sizeSoFar, item);
                 sizeSoFar += currentItemSize;
             }
-        } else if (this.options.direction === 1) {
-            currentItemSize = item.getSize()[0];
-            if (sizeSoFar + currentItemSize < contextSize[0]) {
-                _addToView(currentView, sizeSoFar, item);
-                sizeSoFar += currentItemSize;
-            } else {
-                // result array is populated enough
-                result.push(currentView);
 
-                // reset
-                sizeSoFar = 0;
-                currentView = new View({
-                    size: [undefined, 100]
-                });
-
-                _addToView(currentView, sizeSoFar, item);
-                sizeSoFar += currentItemSize;
-            }
-        }
-
-
-            // remnant items in currentView
+                // remnant items in currentView
             if (i === this._originalArray.length - 1) {
                 result.push(currentView);
             }
@@ -155,7 +145,7 @@ the width/height.
 
     var _addToView = function (view, offset, item) {
         var modifier = new StateModifier({
-            transform: Transform.translate(0, offset, 0)
+            transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
         });
         view.add(modifier).add(item);
     };
