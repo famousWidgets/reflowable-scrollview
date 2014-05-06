@@ -69,74 +69,74 @@ define(function(require, exports, module) {
     var _createNewViewSequence = function (context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
-        // console.log('this._originalArray: ', this._originalArray);
 
         var direction = this.options.direction;
-        var contextSize = context.size; // window's size
+        var contextSize = context.size; // this is an array
         var result = [];
-        var sizeSoFar = 0;
-        var currentView = new View({});
-        var item;
-        var currentItemSize;
-        var maxItemSize = 0;
-        var numberOfItems = 0;
+
+        var accumulatedSize = 0;
+        var currentView = new View();
+        var sequenceItem;
+        var currentSequenceItemSize;
+        var maxSequenceItemSize = 0;
+        var numSequenceItems = 0;
         var spacingBetweenItems = [];
         var rowNumber = 0;
         var rowNumberCounter = 1;
+        var gutter;
 
-        // Calculate spacing between each item
+        // Calculate spacing between each sequenceItem
         for (var i = 0; i < this._originalArray.length; i += 1) {
+            sequenceItem = this._originalArray[i];
 
-            item = this._originalArray[i];
+            currentSequenceItemSize = (direction === 0 ? sequenceItem.getSize()[1] : sequenceItem.getSize()[0]);
 
-            currentItemSize = (direction === 0 ? item.getSize()[1] : item.getSize()[0]);
-
-            if (sizeSoFar + currentItemSize < contextSize[direction === 0 ? 1 : 0]) {
-                sizeSoFar += currentItemSize;
-                numberOfItems += 1;
+            if (accumulatedSize + currentSequenceItemSize < contextSize[direction === 0 ? 1 : 0]) {
+                accumulatedSize += currentSequenceItemSize;
+                numSequenceItems += 1;
                 if (i === this._originalArray.length - 1) {
-                var gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - sizeSoFar;
-                    spacingBetweenItems.push([Math.floor(gutter/(numberOfItems - 1)), numberOfItems]);
+                gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - accumulatedSize;
+                    spacingBetweenItems.push([Math.floor(gutter/(numSequenceItems - 1)), numSequenceItems]);
                 }
             } else {
-                var gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - sizeSoFar;
-                spacingBetweenItems.push([Math.floor(gutter/(numberOfItems - 1)), numberOfItems]);
-                sizeSoFar = 0;
-                sizeSoFar += currentItemSize;
-                numberOfItems = 1;
+                gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - accumulatedSize;
+                spacingBetweenItems.push([Math.floor(gutter/(numSequenceItems - 1)), numSequenceItems]);
+                accumulatedSize = 0;
+                accumulatedSize += currentSequenceItemSize;
+                numSequenceItems = 1;
             }
         }
 
-        sizeSoFar = 0;
+        accumulatedSize = 0;
 
-        for (var i = 0; i < this._originalArray.length; i += 1) {
+        for (var j = 0; j < this._originalArray.length; j += 1) {
             // console.log('i is: ', i);
-            item = this._originalArray[i];
+            sequenceItem = this._originalArray[j];
 
-            // console.log('item is: ', item);
+            // console.log('sequenceItem is: ', sequenceItem);
 
-            currentItemSize = direction === 0 ? item.getSize()[1] : item.getSize()[0];
+            currentSequenceItemSize = direction === 0 ? sequenceItem.getSize()[1] : sequenceItem.getSize()[0];
 
-            if (sizeSoFar + currentItemSize < contextSize[direction === 0 ? 1 : 0]) {
-                 currentItemSize > maxItemSize ? maxItemSize = currentItemSize : false;
-                _addToView.call(this,currentView, sizeSoFar === 0 ? sizeSoFar : (sizeSoFar + spacingBetweenItems[rowNumber][0] * (rowNumberCounter === spacingBetweenItems[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), item);
-                sizeSoFar += currentItemSize;
+            if (accumulatedSize + currentSequenceItemSize < contextSize[direction === 0 ? 1 : 0]) {
+                 if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
+                _addToView.call(this,currentView, accumulatedSize === 0 ? accumulatedSize : (accumulatedSize + spacingBetweenItems[rowNumber][0] * (rowNumberCounter === spacingBetweenItems[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), sequenceItem);
+                accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
-                currentView.setOptions({size: direction === 1 ? [undefined, maxItemSize] : [maxItemSize, undefined]})
+                currentView.setOptions({size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined]});
                 result.push(currentView);
                 // reset
                 rowNumberCounter = 1;
-                sizeSoFar = 0;
+                accumulatedSize = 0;
                 currentView = new View();
 
-                _addToView.call(this, currentView, sizeSoFar === 0 ? sizeSoFar : sizeSoFar + spacingBetweenItems[rowNumber++], item);
-                sizeSoFar += currentItemSize;
+                _addToView.call(this, currentView, accumulatedSize === 0 ? accumulatedSize : accumulatedSize + spacingBetweenItems[rowNumber++], sequenceItem);
+                accumulatedSize += currentSequenceItemSize;
 
             }
 
                 // remnant items in currentView
-            if (i === this._originalArray.length - 1) {
+            if (j === this._originalArray.length - 1) {
                 result.push(currentView);
             }
         }
