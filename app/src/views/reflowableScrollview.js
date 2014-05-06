@@ -14,18 +14,6 @@ define(function(require, exports, module) {
      * @description
      */
 
-/*
-
-1) Create a reflowing / autosizing scrollview from http://codepen.io/befamous/pen/kbxnH
-2) Before making a reusable widget, explore coding this as a view by whatever method seems
-most natural to you. You will need to write some code that takes the views' size every frame
-(either through context.size returned to you in the commit function or hacking it up with
-window.innerWidth/Height) and then creating subviews that are packed correctly for
-the width/height.
-3) There's value in a naive first pass at implementing the scrollview.
-
-*/
-
     function reflowableScrollview (options) {
         ScrollView.apply(this, arguments);
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
@@ -50,20 +38,13 @@ the width/height.
         var origin = context.origin;
         var size = context.size;
 
-        if (this._previousSize[0] !== size[0] || this._previousSize[1] !== size[1]) {
-            // console.log('prev: ', this.previousSize, ' new: ', size);
-            this._previousSize[0] = size[0];
-            this._previousSize[1] = size[1];
-
-            _createNewViewSequence.call(this, context);
-        }
-
         // reset edge detection on size change
-
-        // we believe this isn't getting executed
+        // Implemented bug fix here
         if (!_scroller.options.clipSize && (size[0] !== _scroller._contextSize[0] || size[1] !== _scroller._contextSize[1])) {
             _scroller._onEdge = 0;
-            _scroller._contextSize = size;
+            _scroller._contextSize[0] = size[0];
+            _scroller._contextSize[1] = size[1];
+            _createNewViewSequence.call(this, context);
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
