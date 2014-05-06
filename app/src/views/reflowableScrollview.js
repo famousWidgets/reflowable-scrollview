@@ -7,6 +7,7 @@ define(function(require, exports, module) {
     var ScrollView = require('famous/views/ScrollView');
     var ViewSequence = require('famous/core/ViewSequence');
     var Utility = require('famous/utilities/Utility');
+    var Timer = require('famous/utilities/Timer');
 
     /*
      * @name reflowableScrollview
@@ -18,7 +19,7 @@ define(function(require, exports, module) {
         ScrollView.apply(this, arguments);
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
-
+        this.debounceFlag = true;
         this._previousSize = [undefined, undefined];
         this._scroller.commit = _customCommit.bind(this);
     }
@@ -44,7 +45,13 @@ define(function(require, exports, module) {
             _scroller._onEdge = 0;
             _scroller._contextSize[0] = size[0];
             _scroller._contextSize[1] = size[1];
-            _createNewViewSequence.call(this, context);
+            if (this.debounceFlag) {
+                _createNewViewSequence.call(this, context);
+                this.debounceFlag = false;
+            }
+            var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
+            _timeDebouncedCreateNewViewSequence.call(this, context);
+
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -97,7 +104,7 @@ define(function(require, exports, module) {
                 // if scrolling in the Y direction, we want max height of all sequence items in a particular row
                 // if scrolling in the X direction, we want max width of all sequence items in a particular column
                 if (currentSequenceItemMaxSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemMaxSize;
-                
+
                 // first sequenceItem will be on the left / top most edge
                 if (accumulatedSize === 0) {
                     accumulatedSizeWithGutter = accumulatedSize;
@@ -144,7 +151,7 @@ define(function(require, exports, module) {
     function _calculateGutterInfo(sequenceItems, direction, contextSize) {
         // 'this' will be an instance of reflowableScrollview
         // _calculateGetter.call(this, this._originalArray, direction)
-        
+
         var offsetDirection = (direction === 0 ? 1 : 0);
         var accumulatedSize = 0;
         var numSequenceItems = 0;
@@ -152,7 +159,7 @@ define(function(require, exports, module) {
         var totalGutter;
         var sequenceItem;
         var currentSequenceItemSize;
-        
+
 
         for (var i = 0; i < sequenceItems.length; i += 1) {
             sequenceItem = sequenceItems[i];
@@ -170,7 +177,7 @@ define(function(require, exports, module) {
             } else {
                 totalGutter = contextSize[offsetDirection] - accumulatedSize;
                 gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
-                
+
                 // reset
                 accumulatedSize = 0;
                 numSequenceItems = 0;
