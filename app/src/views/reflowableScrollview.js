@@ -75,15 +75,15 @@ define(function(require, exports, module) {
         var contextSize = context.size; // this is an array
         var result = [];
 
-        var accumulatedSize = 0;
         var currentView = new View();
-        var sequenceItem;
-        var currentSequenceItemSize;
+        var accumulatedSize = 0;
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
         var rowNumber = 0;
         var rowNumberCounter = 1;
+        var sequenceItem;
+        var currentSequenceItemSize;
 
         for (var j = 0; j < this._originalArray.length; j += 1) {
             sequenceItem = this._originalArray[j];
@@ -97,15 +97,14 @@ define(function(require, exports, module) {
                 // result array is populated enough
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
-                
+
                 // reset
                 rowNumberCounter = 1;
                 accumulatedSize = 0;
                 currentView = new View();
 
-                _addToView.call(this, currentView, accumulatedSize === 0 ? accumulatedSize : accumulatedSize + gutterInfo[rowNumber++], sequenceItem);
+                _addToView.call(this, currentView, accumulatedSize, sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
-
             }
 
                 // remnant items in currentView
