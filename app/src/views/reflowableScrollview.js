@@ -17,7 +17,7 @@ define(function(require, exports, module) {
 /*
 
 1) Create a reflowing / autosizing scrollview from http://codepen.io/befamous/pen/kbxnH
-2) Before making a reusable widget, explore coding this as a view by whatever method seems 
+2) Before making a reusable widget, explore coding this as a view by whatever method seems
 most natural to you. You will need to write some code that takes the views' size every frame
 (either through context.size returned to you in the commit function or hacking it up with
 window.innerWidth/Height) and then creating subviews that are packed correctly for
@@ -90,14 +90,21 @@ the width/height.
         this._originalArray = this._originalArray || this._node._.array;
         // console.log('this._originalArray: ', this._originalArray);
 
-        // var direction = this.options.direction;
+        var direction = this.options.direction;
+        console.log(direction);
         var contextSize = context.size; // window's size
         var result = [];
 
         var sizeSoFar = 0;
-        var currentView = new View({
-            size: [undefined, 100]
-        });
+        if (this.options.direction === 0) {
+            var currentView = new View({
+                size: [100, undefined]
+            });
+        } else if (this.options.direction === 1) {
+            var currentView = new View({
+                size: [undefined, 100]
+            });
+        }
         var item;
         var currentItemSize;
 
@@ -105,8 +112,26 @@ the width/height.
             // console.log('i is: ', i);
             item = this._originalArray[i];
             // console.log('item is: ', item);
-            currentItemSize = item.getSize()[0];
+        if (this.options.direction === 0) {
+            currentItemSize = item.getSize()[1];
+            if (sizeSoFar + currentItemSize < contextSize[1]) {
+                _addToView(currentView, sizeSoFar, item);
+                sizeSoFar += currentItemSize;
+            } else {
+                // result array is populated enough
+                result.push(currentView);
 
+                // reset
+                sizeSoFar = 0;
+                currentView = new View({
+                    size: [100, undefined]
+                });
+
+                _addToView(currentView, sizeSoFar, item);
+                sizeSoFar += currentItemSize;
+            }
+        } else if (this.options.direction === 1) {
+            currentItemSize = item.getSize()[0];
             if (sizeSoFar + currentItemSize < contextSize[0]) {
                 _addToView(currentView, sizeSoFar, item);
                 sizeSoFar += currentItemSize;
@@ -123,6 +148,8 @@ the width/height.
                 _addToView(currentView, sizeSoFar, item);
                 sizeSoFar += currentItemSize;
             }
+        }
+
 
             // remnant items in currentView
             if (i === this._originalArray.length - 1) {
@@ -133,9 +160,9 @@ the width/height.
         this.sequenceFrom.call(this, result);
     };
 
-    var _addToView = function (view, offsetX, item) {
+    var _addToView = function (view, offset, item) {
         var modifier = new StateModifier({
-            transform: Transform.translate(offsetX, 0, 0)
+            transform: Transform.translate(0, offset, 0)
         });
         view.add(modifier).add(item);
     };
