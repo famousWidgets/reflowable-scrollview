@@ -71,6 +71,7 @@ define(function(require, exports, module) {
         this._originalArray = this._originalArray || this._node._.array;
 
         var direction = this.options.direction;
+        var offsetDirection = (direction === 0 ? 1 : 0);
         var contextSize = context.size; // this is an array
         var result = [];
 
@@ -85,21 +86,18 @@ define(function(require, exports, module) {
         var rowNumberCounter = 1;
 
         for (var j = 0; j < this._originalArray.length; j += 1) {
-            // console.log('i is: ', i);
             sequenceItem = this._originalArray[j];
+            currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
 
-            // console.log('sequenceItem is: ', sequenceItem);
-
-            currentSequenceItemSize = direction === 0 ? sequenceItem.getSize()[1] : sequenceItem.getSize()[0];
-
-            if (accumulatedSize + currentSequenceItemSize < contextSize[direction === 0 ? 1 : 0]) {
+            if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
                  if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
-                _addToView.call(this,currentView, accumulatedSize === 0 ? accumulatedSize : (accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), sequenceItem);
+                _addToView.call(this, currentView, accumulatedSize === 0 ? accumulatedSize : (accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
-                currentView.setOptions({size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined]});
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
+                
                 // reset
                 rowNumberCounter = 1;
                 accumulatedSize = 0;
