@@ -50,20 +50,14 @@ the width/height.
         var origin = context.origin;
         var size = context.size;
 
-        if (this._previousSize[0] !== size[0] || this._previousSize[1] !== size[1]) {
-            // console.log('prev: ', this.previousSize, ' new: ', size);
-            this._previousSize[0] = size[0];
-            this._previousSize[1] = size[1];
-
-            _createNewViewSequence.call(this, context);
-        }
-
         // reset edge detection on size change
 
-        // we believe this isn't getting executed
         if (!_scroller.options.clipSize && (size[0] !== _scroller._contextSize[0] || size[1] !== _scroller._contextSize[1])) {
             _scroller._onEdge = 0;
-            _scroller._contextSize = size;
+            _scroller._contextSize[0] = size[0];
+            _scroller._contextSize[1] = size[1];
+
+            _createNewViewSequence.call(this, context);
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -88,7 +82,6 @@ the width/height.
     var _createNewViewSequence = function (context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
-        // console.log('this._originalArray: ', this._originalArray);
 
         var direction = this.options.direction;
         console.log(direction);
