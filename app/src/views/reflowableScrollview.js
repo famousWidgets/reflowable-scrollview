@@ -80,34 +80,9 @@ define(function(require, exports, module) {
         var currentSequenceItemSize;
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
-        var spacingBetweenItems = [];
+        var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
         var rowNumber = 0;
         var rowNumberCounter = 1;
-        var gutter;
-
-        // Calculate spacing between each sequenceItem
-        for (var i = 0; i < this._originalArray.length; i += 1) {
-            sequenceItem = this._originalArray[i];
-
-            currentSequenceItemSize = (direction === 0 ? sequenceItem.getSize()[1] : sequenceItem.getSize()[0]);
-
-            if (accumulatedSize + currentSequenceItemSize < contextSize[direction === 0 ? 1 : 0]) {
-                accumulatedSize += currentSequenceItemSize;
-                numSequenceItems += 1;
-                if (i === this._originalArray.length - 1) {
-                gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - accumulatedSize;
-                    spacingBetweenItems.push([Math.floor(gutter/(numSequenceItems - 1)), numSequenceItems]);
-                }
-            } else {
-                gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - accumulatedSize;
-                spacingBetweenItems.push([Math.floor(gutter/(numSequenceItems - 1)), numSequenceItems]);
-                accumulatedSize = 0;
-                accumulatedSize += currentSequenceItemSize;
-                numSequenceItems = 1;
-            }
-        }
-
-        accumulatedSize = 0;
 
         for (var j = 0; j < this._originalArray.length; j += 1) {
             // console.log('i is: ', i);
@@ -119,7 +94,7 @@ define(function(require, exports, module) {
 
             if (accumulatedSize + currentSequenceItemSize < contextSize[direction === 0 ? 1 : 0]) {
                  if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
-                _addToView.call(this,currentView, accumulatedSize === 0 ? accumulatedSize : (accumulatedSize + spacingBetweenItems[rowNumber][0] * (rowNumberCounter === spacingBetweenItems[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), sequenceItem);
+                _addToView.call(this,currentView, accumulatedSize === 0 ? accumulatedSize : (accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
@@ -130,7 +105,7 @@ define(function(require, exports, module) {
                 accumulatedSize = 0;
                 currentView = new View();
 
-                _addToView.call(this, currentView, accumulatedSize === 0 ? accumulatedSize : accumulatedSize + spacingBetweenItems[rowNumber++], sequenceItem);
+                _addToView.call(this, currentView, accumulatedSize === 0 ? accumulatedSize : accumulatedSize + gutterInfo[rowNumber++], sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
 
             }
@@ -144,11 +119,53 @@ define(function(require, exports, module) {
         this.sequenceFrom.call(this, result);
     }
 
-    function _addToView(view, offset, item) {
+    function _addToView(view, offset, sequenceItem) {
         var modifier = new StateModifier({
             transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
         });
-        view.add(modifier).add(item);
+        view.add(modifier).add(sequenceItem);
+    }
+
+    function _calculateGutterInfo(sequenceItems, direction, contextSize) {
+        // 'this' will be an instance of reflowableScrollview
+        // _calculateGetter.call(this, this._originalArray, direction)
+        
+        var offsetDirection = (direction === 0 ? 1 : 0);
+        var accumulatedSize = 0;
+        var numSequenceItems = 0;
+        var gutterInfo = [];
+        var totalGutter;
+        var sequenceItem;
+        var currentSequenceItemSize;
+        
+
+        for (var i = 0; i < sequenceItems.length; i += 1) {
+            sequenceItem = sequenceItems[i];
+            currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
+
+            if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
+                accumulatedSize += currentSequenceItemSize;
+                numSequenceItems += 1;
+
+                // last item in sequenceItems
+                if (i === sequenceItems.length - 1) {
+                    totalGutter = contextSize[offsetDirection] - accumulatedSize;
+                    gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
+                }
+            } else {
+                totalGutter = contextSize[offsetDirection] - accumulatedSize;
+                gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
+                
+                // reset
+                accumulatedSize = 0;
+                numSequenceItems = 0;
+
+                accumulatedSize += currentSequenceItemSize;
+                numSequenceItems += 1;
+            }
+        }
+
+        return gutterInfo; // [total gutter / number of items, number of items]
     }
 
     function _sizeForDir(size) {
