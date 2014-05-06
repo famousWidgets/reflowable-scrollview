@@ -11,7 +11,7 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
-        direction: Utility.Direction.Y
+        direction: Utility.Direction.X
     });
 
     var logos = [];
