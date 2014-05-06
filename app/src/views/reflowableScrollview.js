@@ -14,18 +14,6 @@ define(function(require, exports, module) {
      * @description
      */
 
-/*
-
-1) Create a reflowing / autosizing scrollview from http://codepen.io/befamous/pen/kbxnH
-2) Before making a reusable widget, explore coding this as a view by whatever method seems
-most natural to you. You will need to write some code that takes the views' size every frame
-(either through context.size returned to you in the commit function or hacking it up with
-window.innerWidth/Height) and then creating subviews that are packed correctly for
-the width/height.
-3) There's value in a naive first pass at implementing the scrollview.
-
-*/
-
     function reflowableScrollview (options) {
         ScrollView.apply(this, arguments);
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
@@ -41,7 +29,7 @@ the width/height.
     reflowableScrollview.DEFAULT_OPTIONS = {
     };
 
-    var _customCommit = function (context) {
+    function _customCommit(context) {
         // 'this' will be an instance of reflowableScrollview
         var _scroller = this._scroller;
 
@@ -50,20 +38,13 @@ the width/height.
         var origin = context.origin;
         var size = context.size;
 
-        if (this._previousSize[0] !== size[0] || this._previousSize[1] !== size[1]) {
-            // console.log('prev: ', this.previousSize, ' new: ', size);
-            this._previousSize[0] = size[0];
-            this._previousSize[1] = size[1];
-
-            _createNewViewSequence.call(this, context);
-        }
-
         // reset edge detection on size change
-
-        // we believe this isn't getting executed
+        // Implemented bug fix here
         if (!_scroller.options.clipSize && (size[0] !== _scroller._contextSize[0] || size[1] !== _scroller._contextSize[1])) {
             _scroller._onEdge = 0;
-            _scroller._contextSize = size;
+            _scroller._contextSize[0] = size[0];
+            _scroller._contextSize[1] = size[1];
+            _createNewViewSequence.call(this, context);
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -83,92 +64,116 @@ the width/height.
             origin: origin,
             target: _scroller.group.render()
         };
-    };
+    }
 
-    var _createNewViewSequence = function (context) {
+    function _createNewViewSequence(context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
-        // console.log('this._originalArray: ', this._originalArray);
 
         var direction = this.options.direction;
-        var contextSize = context.size; // window's size
+        var offsetDirection = (direction === 0 ? 1 : 0);
+        var contextSize = context.size; // this is an array
         var result = [];
-        var sizeSoFar = 0;
-        var currentView = new View({});
-        var item;
-        var currentItemSize;
-        var maxItemSize = 0;
-        var numberOfItems = 0;
-        var spacingBetweenItems = [];
+
+        var currentView = new View();
+        var accumulatedSize = 0;
+        var maxSequenceItemSize = 0;
+        var numSequenceItems = 0;
+        var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
+        var accumulatedSizeWithGutter;
         var rowNumber = 0;
         var rowNumberCounter = 1;
+        var sequenceItem;
+        var currentSequenceItemSize;
 
-        // Calculate spacing between each item
-        for (var i = 0; i < this._originalArray.length; i += 1) {
+        for (var j = 0; j < this._originalArray.length; j += 1) {
+            sequenceItem = this._originalArray[j];
+            currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
 
-            item = this._originalArray[i];
-
-            currentItemSize = (direction === 0 ? item.getSize()[1] : item.getSize()[0]);
-
-            if (sizeSoFar + currentItemSize < contextSize[direction === 0 ? 1 : 0]) {
-                sizeSoFar += currentItemSize;
-                numberOfItems += 1;
-                if (i === this._originalArray.length - 1) {
-                var gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - sizeSoFar;
-                    spacingBetweenItems.push([Math.floor(gutter/(numberOfItems - 1)), numberOfItems]);
+            if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
+                if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
+                
+                // first sequenceItem will be on the left / top most edge
+                if (accumulatedSize === 0) {
+                    accumulatedSizeWithGutter = accumulatedSize;
+                } else {
+                    // want to include number of gutters proportional to the number of items in a row
+                    accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++);
                 }
-            } else {
-                var gutter = (direction === 0 ? contextSize[1] : contextSize[0]) - sizeSoFar;
-                spacingBetweenItems.push([Math.floor(gutter/(numberOfItems - 1)), numberOfItems]);
-                sizeSoFar = 0;
-                sizeSoFar += currentItemSize;
-                numberOfItems = 1;
-            }
-        }
-
-        sizeSoFar = 0;
-
-        for (var i = 0; i < this._originalArray.length; i += 1) {
-            // console.log('i is: ', i);
-            item = this._originalArray[i];
-
-            // console.log('item is: ', item);
-
-            currentItemSize = direction === 0 ? item.getSize()[1] : item.getSize()[0];
-
-            if (sizeSoFar + currentItemSize < contextSize[direction === 0 ? 1 : 0]) {
-                 currentItemSize > maxItemSize ? maxItemSize = currentItemSize : false;
-                _addToView.call(this,currentView, sizeSoFar === 0 ? sizeSoFar : (sizeSoFar + spacingBetweenItems[rowNumber][0] * (rowNumberCounter === spacingBetweenItems[rowNumber][1] ? rowNumberCounter : rowNumberCounter++)), item);
-                sizeSoFar += currentItemSize;
+                
+                _addToView.call(this, currentView, accumulatedSizeWithGutter, sequenceItem);
+                accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
-                currentView.setOptions({size: direction === 1 ? [undefined, maxItemSize] : [maxItemSize, undefined]})
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
+
                 // reset
                 rowNumberCounter = 1;
-                sizeSoFar = 0;
+                accumulatedSize = 0;
                 currentView = new View();
 
-                _addToView.call(this, currentView, sizeSoFar === 0 ? sizeSoFar : sizeSoFar + spacingBetweenItems[rowNumber++], item);
-                sizeSoFar += currentItemSize;
-
+                _addToView.call(this, currentView, accumulatedSize, sequenceItem);
+                accumulatedSize += currentSequenceItemSize;
             }
 
                 // remnant items in currentView
-            if (i === this._originalArray.length - 1) {
+            if (j === this._originalArray.length - 1) {
                 result.push(currentView);
             }
         }
 
         this.sequenceFrom.call(this, result);
-    };
+    }
 
-    var _addToView = function (view, offset, item) {
+    function _addToView(view, offset, sequenceItem) {
         var modifier = new StateModifier({
             transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
         });
-        view.add(modifier).add(item);
-    };
+        view.add(modifier).add(sequenceItem);
+    }
+
+    function _calculateGutterInfo(sequenceItems, direction, contextSize) {
+        // 'this' will be an instance of reflowableScrollview
+        // _calculateGetter.call(this, this._originalArray, direction)
+        
+        var offsetDirection = (direction === 0 ? 1 : 0);
+        var accumulatedSize = 0;
+        var numSequenceItems = 0;
+        var gutterInfo = [];
+        var totalGutter;
+        var sequenceItem;
+        var currentSequenceItemSize;
+        
+
+        for (var i = 0; i < sequenceItems.length; i += 1) {
+            sequenceItem = sequenceItems[i];
+            currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
+
+            if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
+                accumulatedSize += currentSequenceItemSize;
+                numSequenceItems += 1;
+
+                // last item in sequenceItems
+                if (i === sequenceItems.length - 1) {
+                    totalGutter = contextSize[offsetDirection] - accumulatedSize;
+                    gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
+                }
+            } else {
+                totalGutter = contextSize[offsetDirection] - accumulatedSize;
+                gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
+                
+                // reset
+                accumulatedSize = 0;
+                numSequenceItems = 0;
+
+                accumulatedSize += currentSequenceItemSize;
+                numSequenceItems += 1;
+            }
+        }
+
+        return gutterInfo; // [[total gutter / number of items, number of items]] => one inner array for each row
+    }
 
     function _sizeForDir(size) {
         if (!size) size = this._contextSize;
