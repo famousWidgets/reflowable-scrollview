@@ -85,13 +85,18 @@ define(function(require, exports, module) {
         var rowNumberCounter = 1;
         var sequenceItem;
         var currentSequenceItemSize;
+        var currentSequenceItemMaxSize;
 
         for (var j = 0; j < this._originalArray.length; j += 1) {
             sequenceItem = this._originalArray[j];
             currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
+            // console.log(currentSequenceItemSize);
+            currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
 
             if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
-                if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
+                // if scrolling in the Y direction, we want max height of all sequence items in a particular row
+                // if scrolling in the X direction, we want max width of all sequence items in a particular column
+                if (currentSequenceItemMaxSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemMaxSize;
                 
                 // first sequenceItem will be on the left / top most edge
                 if (accumulatedSize === 0) {
@@ -100,17 +105,20 @@ define(function(require, exports, module) {
                     // want to include number of gutters proportional to the number of items in a row
                     accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++);
                 }
-                
+
                 _addToView.call(this, currentView, accumulatedSizeWithGutter, sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
+                // console.log(maxSequenceItemSize);
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
 
                 // reset
+                rowNumber += 1; // make sure we're increasing rowNumber so that we're grabbing correct info from gutterInfo
                 rowNumberCounter = 1;
                 accumulatedSize = 0;
+                maxSequenceItemSize = 0;
                 currentView = new View();
 
                 _addToView.call(this, currentView, accumulatedSize, sequenceItem);
