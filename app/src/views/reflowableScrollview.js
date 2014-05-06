@@ -129,10 +129,8 @@ the width/height.
         sizeSoFar = 0;
 
         for (var i = 0; i < this._originalArray.length; i += 1) {
-            // console.log('i is: ', i);
-            item = this._originalArray[i];
 
-            // console.log('item is: ', item);
+            item = this._originalArray[i];
 
             currentItemSize = direction === 0 ? item.getSize()[1] : item.getSize()[0];
 
@@ -145,12 +143,14 @@ the width/height.
                 currentView.setOptions({size: direction === 1 ? [undefined, maxItemSize] : [maxItemSize, undefined]})
                 result.push(currentView);
                 // reset
+                maxItemSize = 0;
                 rowNumberCounter = 1;
                 sizeSoFar = 0;
                 currentView = new View();
 
                 _addToView.call(this, currentView, sizeSoFar === 0 ? sizeSoFar : sizeSoFar + spacingBetweenItems[rowNumber++], item);
                 sizeSoFar += currentItemSize;
+
 
             }
 
