@@ -93,17 +93,8 @@ the width/height.
         var direction = this.options.direction;
         var contextSize = context.size; // window's size
         var result = [];
-
         var sizeSoFar = 0;
-        if (direction === 0) {
-            var currentView = new View({
-                size: [100, undefined]
-            });
-        } else if (direction === 1) {
-            var currentView = new View({
-                size: [undefined, 100]
-            });
-        }
+        var currentView = new View({});
         var item;
         var currentItemSize;
         var maxItemSize = 0;
@@ -112,13 +103,13 @@ the width/height.
         var rowNumber = 0;
         var rowNumberCounter = 1;
 
+        // Calculate spacing between each item
         for (var i = 0; i < this._originalArray.length; i += 1) {
 
             item = this._originalArray[i];
 
             currentItemSize = (direction === 0 ? item.getSize()[1] : item.getSize()[0]);
 
-            // Calculate spacing between each item
             if (sizeSoFar + currentItemSize < contextSize[direction === 0 ? 1 : 0]) {
                 sizeSoFar += currentItemSize;
                 numberOfItems += 1;
@@ -151,13 +142,12 @@ the width/height.
                 sizeSoFar += currentItemSize;
             } else {
                 // result array is populated enough
+                currentView.setOptions({size: direction === 1 ? [undefined, maxItemSize] : [maxItemSize, undefined]})
                 result.push(currentView);
                 // reset
                 rowNumberCounter = 1;
                 sizeSoFar = 0;
-                currentView = new View({
-                    size: direction === 1 ? [undefined, maxItemSize] : [maxItemSize, undefined]
-                });
+                currentView = new View();
 
                 _addToView.call(this, currentView, sizeSoFar === 0 ? sizeSoFar : sizeSoFar + spacingBetweenItems[rowNumber++], item);
                 sizeSoFar += currentItemSize;
