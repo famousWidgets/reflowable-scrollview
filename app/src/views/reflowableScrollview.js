@@ -29,7 +29,7 @@ define(function(require, exports, module) {
     reflowableScrollview.DEFAULT_OPTIONS = {
     };
 
-    var _customCommit = function (context) {
+    function _customCommit(context) {
         // 'this' will be an instance of reflowableScrollview
         var _scroller = this._scroller;
 
@@ -64,9 +64,9 @@ define(function(require, exports, module) {
             origin: origin,
             target: _scroller.group.render()
         };
-    };
+    }
 
-    var _createNewViewSequence = function (context) {
+    function _createNewViewSequence(context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
 
@@ -142,14 +142,14 @@ define(function(require, exports, module) {
         }
 
         this.sequenceFrom.call(this, result);
-    };
+    }
 
-    var _addToView = function (view, offset, item) {
+    function _addToView(view, offset, item) {
         var modifier = new StateModifier({
             transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
         });
         view.add(modifier).add(item);
-    };
+    }
 
     function _sizeForDir(size) {
         if (!size) size = this._contextSize;
