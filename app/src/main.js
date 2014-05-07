@@ -21,7 +21,7 @@ define(function(require, exports, module) {
     // var sizeCounter = 1;
     // for (var i = 0; i < num; i += 1) {
     //     // hackreactorLogo = new ImageSurface({
-    //     //     size: [100, 100],
+    //     //     size: [200, 200],
     //     //     content: '/content/images/hack_reactor.png',
     //     //     classes: ['backfaceVisibility']
     //     // });
@@ -29,8 +29,8 @@ define(function(require, exports, module) {
     //     var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
 
     //     var surface = new Surface({
-    //         size: [100, 100],
-    //         // size: [100 * (sizeCounter % 2 + 1), 100 * (sizeCounter % 4 + 1)],
+    //         size: [200, 200],
+    //         // size: [200 * (sizeCounter % 2 + 1), 200 * (sizeCounter % 4 + 1)],
     //         content: 'i is ' + i,
     //         properties: {
     //             backgroundColor: color
@@ -171,18 +171,31 @@ define(function(require, exports, module) {
     var r1 = _getPreviousPosition(prev1, curr1, direction);
     console.log('r1: ', r1[12] === 100);
 
-    // different rows
+    // different rows, right diagonal
     var direction = Utility.Direction.Y;
     var prev2 = {position: [100,100], row: 0};
     var curr2 = {position: [0,100], row: 1};
     var r2 = _getPreviousPosition(prev2, curr2, direction);
     console.log('r2: ', r2[12] === 100, r2[13] === -100);
 
-    // different rows
+    // different rows, right diagonal
     var direction = Utility.Direction.Y;
     var prev3 = {position: [0,100], row: 1};
     var curr3 = {position: [100,100], row: 0};
     var r3 = _getPreviousPosition(prev3, curr3, direction);
     console.log('r3: ', r3[12] === -100, r3[13] === 100);
 
+    // different rows, right diagonal
+    var direction = Utility.Direction.Y;
+    var prev4 = {position: [100,100], row: 1};
+    var curr4 = {position: [0,100], row: 0};
+    var r4 = _getPreviousPosition(prev4, curr4, direction);
+    console.log('r4: ', r4[12] === 100, r4[13] === 100);
+
+    // different rows, right diagonal
+    var direction = Utility.Direction.Y;
+    var prev5 = {position: [0,100], row: 0};
+    var curr5 = {position: [100,100], row: 1};
+    var r5 = _getPreviousPosition(prev5, curr5, direction);
+    console.log('r5: ', r5[12] === -100, r5[13] === -100);
 });

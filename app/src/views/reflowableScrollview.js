@@ -245,6 +245,7 @@ define(function(require, exports, module) {
             positionTransform = Transform.translate(previousPosition - currentPosition, 0, 0);   
         }
 
+        // calculate the row data separately, cannot be part of the same if/else chain
         if (currentRow > previousRow) {
             rowTransform = Transform.translate(0, -previousMax, 0);
         }
@@ -329,3 +330,10 @@ define(function(require, exports, module) {
 
     module.exports = reflowableScrollview;
 });
+
+/* animation bug log: 
+  1. cannot animate diagonally if there are more than a difference of one row. e.g: 
+    Row 0  ->   Row 2
+    How do you know how much distance is between them?
+      SOLUTION: keep track of previous row max sizes;
+*/
