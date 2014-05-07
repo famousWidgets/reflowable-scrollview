@@ -109,7 +109,9 @@ define(function(require, exports, module) {
             if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
 
                 // find max view size
-                if (currentSequenceItemMaxSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemMaxSize;
+                if (currentSequenceItemMaxSize > maxSequenceItemSize) {
+                    maxSequenceItemSize = currentSequenceItemMaxSize;
+                }
 
                 // first sequenceItem will be on the left / top most edge
                 if (accumulatedSize === 0) {
@@ -146,6 +148,12 @@ define(function(require, exports, module) {
                 currentView = new View();
                 xyCoordinates = [];
 
+                currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
+
+                if (currentSequenceItemMaxSize > maxSequenceItemSize) {
+                    maxSequenceItemSize = currentSequenceItemMaxSize;
+                }
+
                 // for first item in each row:
                 xyCoordinates.push([accumulatedSize]);
                 _addToView.call(this, currentView, accumulatedSize, sequenceItem);
@@ -154,6 +162,7 @@ define(function(require, exports, module) {
 
                 // remnant items in currentView
             if (j === this._originalArray.length - 1) {
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
                 xyCoordinates.forEach(function(array) {
                     var element = {};
@@ -163,7 +172,7 @@ define(function(require, exports, module) {
                 });
             }
         }
-        console.log('translationObject ', translationObject);
+        // console.log('translationObject ', translationObject);
         this._currentTranslationObject = translationObject;
         this.sequenceFrom.call(this, result);
     }
