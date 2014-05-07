@@ -29,12 +29,8 @@ define(function(require, exports, module) {
         var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
 
         var surface = new Surface({
-<<<<<<< HEAD
-            size: [100, 100*(sizeCounter%2+1)],
-=======
             // size: [100, 100],
             size: [100 * (sizeCounter % 2 + 1), 100 * (sizeCounter % 4 + 1)],
->>>>>>> 78dde177b6117246dee25552ed4c23e1e03e3b02
             content: 'i is ' + i,
             properties: {
                 backgroundColor: color

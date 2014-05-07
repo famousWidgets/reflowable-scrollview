@@ -7,7 +7,9 @@ define(function(require, exports, module) {
     var ScrollView = require('famous/views/ScrollView');
     var ViewSequence = require('famous/core/ViewSequence');
     var Utility = require('famous/utilities/Utility');
-
+    var Timer = require('famous/utilities/Timer');
+    var TransitionableTransform = require('famous/transitions/TransitionableTransform');
+    var Modifier = require('famous/core/Modifier');
     /*
      * @name reflowableScrollview
      * @constructor
@@ -18,9 +20,11 @@ define(function(require, exports, module) {
         ScrollView.apply(this, arguments);
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
-
+        this.debounceFlag = true;
         this._previousSize = [undefined, undefined];
         this._scroller.commit = _customCommit.bind(this);
+        this._previousTranslationObject = null;
+        this._currentTranslationObject = null;
     }
 
     reflowableScrollview.prototype = Object.create(ScrollView.prototype);
@@ -44,7 +48,14 @@ define(function(require, exports, module) {
             _scroller._onEdge = 0;
             _scroller._contextSize[0] = size[0];
             _scroller._contextSize[1] = size[1];
-            _createNewViewSequence.call(this, context);
+            if (this.debounceFlag) {
+                _createNewViewSequence.call(this, context);
+                this.debounceFlag = false;
+            }
+            this._previousTranslationObject = this._currentTranslationObject;
+            var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
+            _timeDebouncedCreateNewViewSequence.call(this, context);
+
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -85,13 +96,20 @@ define(function(require, exports, module) {
         var rowNumberCounter = 1;
         var sequenceItem;
         var currentSequenceItemSize;
+        var currentSequenceItemMaxSize;
+        var translationObject = [];
+        var xyCoordinates = [];
 
         for (var j = 0; j < this._originalArray.length; j += 1) {
             sequenceItem = this._originalArray[j];
             currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
+            currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
 
+            // Check if sum of item sizes is larger than context size
             if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
-                if (currentSequenceItemSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemSize;
+
+                // find max view size
+                if (currentSequenceItemMaxSize > maxSequenceItemSize) maxSequenceItemSize = currentSequenceItemMaxSize;
 
                 // first sequenceItem will be on the left / top most edge
                 if (accumulatedSize === 0) {
@@ -101,20 +119,35 @@ define(function(require, exports, module) {
                     accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++);
                 }
 
+                // collect xyCoordinates of each item
+                xyCoordinates.push([accumulatedSizeWithGutter]);
 
                 _addToView.call(this, currentView, accumulatedSizeWithGutter, sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
+                // console.log(maxSequenceItemSize);
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
 
+                // add max view size to each xyCoordinates subarray
+                xyCoordinates.forEach(function(array) {
+                    var element = {};
+                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
+                    element['row'] = rowNumber;
+                    translationObject.push(element);
+                });
+
                 // reset
-                maxItemSize = 0;
+                rowNumber += 1; // make sure we're increasing rowNumber so that we're grabbing correct info from gutterInfo
                 rowNumberCounter = 1;
                 accumulatedSize = 0;
+                maxSequenceItemSize = 0;
                 currentView = new View();
+                xyCoordinates = [];
 
+                // for first item in each row:
+                xyCoordinates.push([accumulatedSize]);
                 _addToView.call(this, currentView, accumulatedSize, sequenceItem);
                 accumulatedSize += currentSequenceItemSize;
             }
@@ -122,18 +155,45 @@ define(function(require, exports, module) {
                 // remnant items in currentView
             if (j === this._originalArray.length - 1) {
                 result.push(currentView);
+                xyCoordinates.forEach(function(array) {
+                    var element = {};
+                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
+                    element['row'] = rowNumber;
+                    translationObject.push(element);
+                });
             }
         }
-
+        console.log('translationObject ', translationObject);
+        this._currentTranslationObject = translationObject;
         this.sequenceFrom.call(this, result);
     }
 
     function _addToView(view, offset, sequenceItem) {
+
         var modifier = new StateModifier({
             transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
         });
         view.add(modifier).add(sequenceItem);
     }
+
+    // Test
+    // function _addToView(view, offset, sequenceItem) {
+    //     console.log('addtoView');
+    //     var transitionableTransform = new TransitionableTransform();
+    //     var modifier = new Modifier({
+    //         transform: transitionableTransform
+    //     });
+    //     transitionableTransform.setTranslate(this.options.direction === 0 ? [0, offset, 0] : [offset, 0, 0], {duration: 1000});
+    //     view.add(modifier).add(sequenceItem);
+    // }
+
+    function _transition(view, offset, sequenceItem, index) {
+        var transitionableTransform = new TransitionableTransform();
+        this._modifier[index].transform = transitionableTransform;
+        view.add(this._modifier[index]).add(sequenceItem);
+        transitionableTransform.setTranslate([0,offset,0], {duration: 3000});
+    }
+
 
     function _calculateGutterInfo(sequenceItems, direction, contextSize) {
         // 'this' will be an instance of reflowableScrollview
