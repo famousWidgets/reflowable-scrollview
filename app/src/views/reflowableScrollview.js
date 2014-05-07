@@ -26,6 +26,7 @@ define(function(require, exports, module) {
         this._scroller.commit = _customCommit.bind(this);
         this._previousTranslationObject = null;
         this._currentTranslationObject = null;
+        this._result = [];
     }
 
     reflowableScrollview.prototype = Object.create(ScrollView.prototype);
@@ -186,7 +187,15 @@ define(function(require, exports, module) {
         this._currentTranslationObject = translationObject;
 
         for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
-            this._transitionableArray[i].setTranslate([200, 200, 0], {duration: 3000, curve: 'easeInOut'});
+            if (this._previousTranslationObject === null) {
+                this._previousTranslationObject = this._currentTranslationObject;
+                // this._previousTranslationObject[i] = { position: [0, 0], row: 0 };
+            }
+            // console.log('previous', this._previousTranslationObject[i]);
+            // console.log('current', this._currentTranslationObject[i]);
+            this._result[i] = _getPreviousPosition.call(this, this._previousTranslationObject[i], this._currentTranslationObject[i]);
+            // console.log(this._result[i]);
+            this._transitionableArray[i].setTranslate([-this._result[i][12], -this._result[i][13] , -this._result[i][14]], {duration: 3000, curve: 'easeInOut'});
             // this._currentTranslationObject[i].transitionable.setTranslate([200, 200, 0], {duration: 3000, curve: 'easeInOut'});
         }
 
@@ -198,20 +207,53 @@ define(function(require, exports, module) {
         // var transitionable;
         var modifier = new Modifier({
             // transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
-            transform: _customFunction.call(this, offset, idx)
+            transform: function () { _customFunction.call(this, offset, idx) }.bind(this)
         });
         view.add(modifier).add(sequenceItem);
     }
 
     function _customFunction(offset, idx) {
-        // var current = new TransitionableTransform();
-        // var o
+        var fromOrig = this._result[idx];
+        var toNew = this._transitionableArray[idx].get();
+        // console.log('fromOrig is', fromOrig);
+        // console.log('toNew is', toNew);
         // return (this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0));
-        return this._transitionableArray[idx];
+        return Transform.multiply(fromOrig, toNew);
     }
 
-    function _getPreviousPosition() {
+    // _getPreviousPosition.call(this, previousObj, currentObj) - where 'this' is an instance of reflowable scrollview
+    function _getPreviousPosition(previousObj, currentObj) {
+        var direction = this.options.direction;
+        var offsetDirection = (direction === 0 ? 1 : 0);
 
+        var positionTransform = Transform.identity;
+        var rowTransform = Transform.identity;
+
+        // element['position'] = [array[0],maxSequenceItemSize] OR [maxSequenceItemSize, array[0]];
+        // element['row'] = rowNumber;
+
+        // if scrolling along Y:
+        var currentPosition = currentObj.position[offsetDirection];
+        var previousPosition = previousObj.position[offsetDirection];
+        var currentMax = currentObj.position[direction];
+        var previousMax = previousObj.position[direction];
+        var currentRow = currentObj.row;
+        var previousRow = previousObj.row;
+
+        if (currentPosition > previousPosition) {
+            positionTransform = Transform.translate(-(currentPosition - previousPosition), 0, 0);
+        }
+        else if (previousPosition > currentPosition) {
+            positionTransform = Transform.translate(previousPosition - currentPosition, 0, 0);   
+        }
+        else if (currentRow > previousRow) {
+            rowTransform = Transform.translate(0, -previousMax, 0);
+        }
+        else if (previousRow > currentRow) {
+            rowTransform = Transform.translate(0, currentMax, 0);
+        }
+
+        return Transform.multiply(positionTransform, rowTransform);
     }
 
     // Test
