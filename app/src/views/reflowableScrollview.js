@@ -115,7 +115,7 @@ define(function(require, exports, module) {
             currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
 
             // Check if sum of item sizes is larger than context size
-            if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
+            if (accumulatedSize + currentSequenceItemSize <= contextSize[offsetDirection]) {
 
                 // find max view size
                 if (currentSequenceItemMaxSize > maxSequenceItemSize) {
@@ -207,17 +207,15 @@ define(function(require, exports, module) {
         // var transitionable;
         var modifier = new Modifier({
             // transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
-            transform: function () { _customFunction.call(this, offset, idx) }.bind(this)
+            transform: function () { return _customFunction.call(this, offset, idx) }.bind(this)
         });
         view.add(modifier).add(sequenceItem);
     }
 
     function _customFunction(offset, idx) {
+        // console.log('index: ', idx, 'offset: ', offset);
         var fromOrig = this._result[idx];
         var toNew = this._transitionableArray[idx].get();
-        // console.log('fromOrig is', fromOrig);
-        // console.log('toNew is', toNew);
-        // return (this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0));
         return Transform.multiply(fromOrig, toNew);
     }
 
@@ -246,7 +244,8 @@ define(function(require, exports, module) {
         else if (previousPosition > currentPosition) {
             positionTransform = Transform.translate(previousPosition - currentPosition, 0, 0);   
         }
-        else if (currentRow > previousRow) {
+
+        if (currentRow > previousRow) {
             rowTransform = Transform.translate(0, -previousMax, 0);
         }
         else if (previousRow > currentRow) {
@@ -292,7 +291,7 @@ define(function(require, exports, module) {
             sequenceItem = sequenceItems[i];
             currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
 
-            if (accumulatedSize + currentSequenceItemSize < contextSize[offsetDirection]) {
+            if (accumulatedSize + currentSequenceItemSize <= contextSize[offsetDirection]) {
                 accumulatedSize += currentSequenceItemSize;
                 numSequenceItems += 1;
 
