@@ -11,7 +11,7 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
-        direction: Utility.Direction.Y
+        direction: Utility.Direction.X
     });
 
     var logos = [];
@@ -30,7 +30,7 @@ define(function(require, exports, module) {
 
         var surface = new Surface({
             // size: [100, 100],
-            size: [100 * (sizeCounter % 2 + 1), 100 * (sizeCounter % 4 + 1)],
+            size: [100 * (sizeCounter % 2 + 1), 100 ],
             content: 'i is ' + i,
             properties: {
                 backgroundColor: color
