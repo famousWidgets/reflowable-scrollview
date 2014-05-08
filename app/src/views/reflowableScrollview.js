@@ -10,6 +10,7 @@ define(function(require, exports, module) {
     var Utility = require('famous/utilities/Utility');
     var Timer = require('famous/utilities/Timer');
     var TransitionableTransform = require('famous/transitions/TransitionableTransform');
+    var Easing = require('famous/transitions/Easing');
 
     /*
      * @name reflowableScrollview
@@ -21,6 +22,7 @@ define(function(require, exports, module) {
         ScrollView.apply(this, arguments);
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
+
         this.debounceFlag = true;
         this._scroller.commit = _customCommit.bind(this);
         this._previousTranslationObject = [];
@@ -34,6 +36,11 @@ define(function(require, exports, module) {
     reflowableScrollview.prototype.constructor = reflowableScrollview;
 
     reflowableScrollview.DEFAULT_OPTIONS = {
+        direction: Utility.Direction.Y,
+        duration: 1000,
+        curve: 'linear',
+        debounceTimer: 1000,
+        gutter: true
     };
 
     function _customCommit(context) {
@@ -55,7 +62,7 @@ define(function(require, exports, module) {
             this._previousTranslationObject = this._currentTranslationObject;
 
             if (!this.debounceFlag && this._timer) {
-                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
+                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence, this.options.debounceTimer);
                 _timeDebouncedCreateNewViewSequence.call(this, context);
                 this._timer = false;
             }
@@ -139,8 +146,7 @@ define(function(require, exports, module) {
                     accumulatedSizeWithGutter = accumulatedSize;
                 } else {
                     // want to include number of gutters proportional to the number of items in a row
-                    accumulatedSizeWithGutter = accumulatedSize;
-                    // accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++);
+                    accumulatedSizeWithGutter = this.options.gutter ? accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++): accumulatedSize;
                 }
 
                 // collect xyCoordinates of each item
@@ -217,7 +223,7 @@ define(function(require, exports, module) {
             this._transitionableArray[i].set(this._result[i]);
 
             // animate back to current
-            this._transitionableArray[i].set(Transform.identity, {duration: 1000});
+            this._transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
 
             // console log of 3
             i === 3 ? window.prev = prevTransObj : '';
@@ -351,13 +357,3 @@ define(function(require, exports, module) {
 
     module.exports = reflowableScrollview;
 });
-
-/* animation bug log: 
-  1. cannot animate diagonally if there are more than a difference of one row. e.g: 
-    Row 0  ->   Row 2
-    How do you know how much distance is between them?
-      SOLUTION: keep track of previous row max sizes;
-
-  2. DONE: customCommit now calls just once
-  3. 
-*/
