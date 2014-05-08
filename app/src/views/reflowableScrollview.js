@@ -1,4 +1,4 @@
-/*globals define*/
+// globals define //
 define(function(require, exports, module) {
     var View = require('famous/core/View');
     var Surface = require('famous/core/Surface');
@@ -26,6 +26,7 @@ define(function(require, exports, module) {
         this._previousTranslationObject = [];
         this._currentTranslationObject = [];
         this._result = [];
+        this._timer = true;
 
     }
 
@@ -53,9 +54,10 @@ define(function(require, exports, module) {
 
             this._previousTranslationObject = this._currentTranslationObject;
 
-            if (!this.debounceFlag) {
-                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,200);
+            if (!this.debounceFlag && this._timer) {
+                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
                 _timeDebouncedCreateNewViewSequence.call(this, context);
+                this._timer = false;
             }
 
             // first time execution of this code
@@ -137,7 +139,8 @@ define(function(require, exports, module) {
                     accumulatedSizeWithGutter = accumulatedSize;
                 } else {
                     // want to include number of gutters proportional to the number of items in a row
-                    accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++);
+                    accumulatedSizeWithGutter = accumulatedSize;
+                    // accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++);
                 }
 
                 // collect xyCoordinates of each item
@@ -192,18 +195,29 @@ define(function(require, exports, module) {
                 });
             }
         }
+
         // console.log('translationObject ', translationObject);
         this._currentTranslationObject = translationObject;
 
         for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
             // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
             var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};
+            i === 3 ? window.prev = prevTransObj : '';
+            i === 3 ? window.curr = this._currentTranslationObject[i] : '';
             
             this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
-            this._transitionableArray[i].setTranslate([-this._result[i][12], -this._result[i][13] , -this._result[i][14]], {duration: 3000, curve: 'easeInOut'});
+            i === 3 ? window.res = this._result[i] : '';
+
+            this._transitionableArray[i].halt();
+            var v = this._transitionableArray[i].get();
+            var trans = Transform.translate.apply(this, [ -this._result[i][12], -this._result[i][13], -this._result[i][14] ]);
+            var comb = Transform.multiply(v, trans);
+            this._transitionableArray[i].set(comb, {duration: 1000});
+            i === 3 ? console.log(window.prev.position, window.curr.position, res) : '';
         }
 
         this.sequenceFrom.call(this, result);
+        this._timer = true;
         // return result;
     }
 
@@ -216,7 +230,10 @@ define(function(require, exports, module) {
     }
 
     function _customFunction(offset, idx) {
-        var fromOrig = this._result[idx];
+        var orig = this._result[idx];
+        var x = orig[12];
+        var y = orig[13];
+        var fromOrig = Transform.translate(x, y, 0);
         var toNew = this._transitionableArray[idx].get();
         return Transform.multiply(fromOrig, toNew);
     }

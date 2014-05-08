@@ -53,12 +53,13 @@ define(function(require, exports, module) {
     mainContext.add(reflowable);
 
     /* *************************************************************************************** */
-    // /////////// greg test ///////////////
-    // // greg test: //
+    /////////// greg test ///////////////
+    // greg test: //
     // var View = require('famous/core/View');
     // var StateModifier = require('famous/modifiers/StateModifier');
     // var TransitionableTransform = require('famous/transitions/TransitionableTransform');
     // var Scrollview = require('famous/views/Scrollview');
+    // var Timer = require('famous/utilities/Timer');
     
     // // view gets translated to a certain place
     // var v1 = new View();
@@ -98,6 +99,15 @@ define(function(require, exports, module) {
     // // };
 
     // tt1.setTranslate([0, 200, 0], {duration: 3000, curve: 'easeInOut'});
+    // var func = function () {
+    //     tt1.halt();
+    //     var prev = tt1.get();
+    //     var move = Transform.translate.apply(null, [300, 0, 0]);
+    //     var comb = Transform.multiply(prev, move);
+    //     tt1.set(comb, {duration: 1000});
+    // }
+    // var f = Timer.debounce(func, 1000);
+    // f();
 
     // function customFunction () {
     //     var current = tt1.get();
@@ -106,18 +116,20 @@ define(function(require, exports, module) {
         
     // };
 
-    // // s2.on('click', function () {
-    // //     tt1.halt();
-    // //     var orig = tt1.get();
-    // //     var trans = [300, 0, 0];
-    // //     var newPos = Transform.translate.apply(null, trans);
-    // //     var combined = Transform.multiply(orig, newPos);
-    // //     tt1.set(combined, {duration: 1000, curve: 'easeInOut'});
-    // // });
+    // s2.on('click', function () {
+    //     tt1.halt();
+    //     var orig = tt1.get();
+    //     var trans = [300, 0, 0];
+    //     var newPos = Transform.translate.apply(null, trans);
+    //     var combined = Transform.multiply(orig, newPos);
+    //     tt1.set(combined, {duration: 1000, curve: 'easeInOut'});
+    // });
 
 
     // mainContext.add(m1InnerRender).add(v1);  // innerREnder, downstream
     // //////// greg END test/////////////
+
+    // test _getPreviousPosition
     var test_getPreviousPosition = function () {
         // function test
         // _getPreviousPosition.call(this, previousObj, currentObj) - where 'this' is an instance of reflowable scrollview
