@@ -208,12 +208,27 @@ define(function(require, exports, module) {
             this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
             i === 3 ? window.res = this._result[i] : '';
 
+            // this._transitionableArray[i].halt();
+            // var v = this._transitionableArray[i].get();
+            // var trans = Transform.translate.apply(this, [ -this._result[i][12], -this._result[i][13], -this._result[i][14] ]);
+            // var comb = Transform.multiply(v, trans);
+
+            // reset transitionable
+            var newPos = this._currentTranslationObject[i].position;
+            var newPosMatrix = Transform.translate(newPos[0], newPos[1]);
+
+            // reset
             this._transitionableArray[i].halt();
-            var v = this._transitionableArray[i].get();
-            var trans = Transform.translate.apply(this, [ -this._result[i][12], -this._result[i][13], -this._result[i][14] ]);
-            var comb = Transform.multiply(v, trans);
-            this._transitionableArray[i].set(comb, {duration: 1000});
-            i === 3 ? console.log(window.prev.position, window.curr.position, res, comb[12], comb[13]) : '';
+            this._transitionableArray[i].set(Transform.identity);
+
+            // go to prev
+            this._transitionableArray[i].set(this._result[i]);
+
+            // animate back to current
+            this._transitionableArray[i].set(Transform.identity, {duration: 1000});
+
+            // console log of 3
+            i === 3 ? console.log(window.prev.position, window.curr.position, res, this._transitionableArray[i].get()) : '';
         }
 
         this.sequenceFrom.call(this, result);
@@ -232,12 +247,18 @@ define(function(require, exports, module) {
     }
 
     function _customFunction(offset, idx) {
-        var orig = this._result[idx];
-        var x = orig[12];
-        var y = orig[13];
-        var fromOrig = Transform.translate(x, y, 0);
-        var toNew = this._transitionableArray[idx].get();
-        return Transform.multiply(fromOrig, toNew);
+        // var newPos = this._currentTranslationObject[idx].position;
+        // var newPosMatrix = Transform.translate(newPos[0], newPos[1], 0);
+        // var orig = this._result[idx];
+        // var back = Transform.multiply(newPosMatrix, orig);
+        // var toNew = this._transitionableArray[idx].get();
+        // return Transform.multiply(back, toNew);
+        var off = Transform.translate(offset, 0, 0);
+        // var orig = Transform.multiply(off, this._result[idx]);
+        var trans = this._transitionableArray[idx].get();
+        var orig = Transform.multiply(off, trans);
+
+        return orig;
     }
 
     // _getPreviousPosition.call(this, previousObj, currentObj) - where 'this' is an instance of reflowable scrollview
@@ -263,7 +284,7 @@ define(function(require, exports, module) {
             positionTransform = Transform.translate(-(currentPosition - previousPosition), 0, 0);
         }
         else if (previousPosition > currentPosition) {
-            positionTransform = Transform.translate(previousPosition - currentPosition, 0, 0);   
+            positionTransform = Transform.translate(previousPosition - currentPosition, 0, 0);
         }
 
         // calculate the row data separately, cannot be part of the same if/else chain

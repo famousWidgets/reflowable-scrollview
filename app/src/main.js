@@ -17,7 +17,7 @@ define(function(require, exports, module) {
     var logos = [];
     // var famousLogo;
     // var hackreactorLogo;
-    var num = 20;
+    var num = 1000;
     var sizeCounter = 1;
     for (var i = 0; i < num; i += 1) {
         // hackreactorLogo = new ImageSurface({
@@ -29,9 +29,9 @@ define(function(require, exports, module) {
         var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
 
         var surface = new Surface({
-            size: [200, 200],
-            // size: [200 * (sizeCounter % 2 + 1), 200 * (sizeCounter % 4 + 1)],
-            content: 'i is ' + i,
+            size: [25, 25],
+            // size: [50 * (sizeCounter % 2 + 1), 50 * (sizeCounter % 4 + 1)],
+            content:  ''+i,
             properties: {
                 backgroundColor: color
             }
