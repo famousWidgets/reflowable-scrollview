@@ -24,8 +24,8 @@ define(function(require, exports, module) {
         this.debounceFlag = true;
         this._previousSize = [undefined, undefined];
         this._scroller.commit = _customCommit.bind(this);
-        this._previousTranslationObject = null;
-        this._currentTranslationObject = null;
+        this._previousTranslationObject = [];
+        this._currentTranslationObject = [];
         this._result = [];
     }
 
@@ -57,7 +57,7 @@ define(function(require, exports, module) {
                 var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
                 _timeDebouncedCreateNewViewSequence.call(this, context);
             }
-            
+
             if (this.debounceFlag) {
                 _createNewViewSequence.call(this, context);
                 this.debounceFlag = false;
@@ -191,16 +191,13 @@ define(function(require, exports, module) {
         this._currentTranslationObject = translationObject;
 
         for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
-            if (this._previousTranslationObject === null) {
-                this._previousTranslationObject = this._currentTranslationObject;
-                // this._previousTranslationObject[i] = { position: [0, 0], row: 0 };
-            }
-            // console.log('previous', this._previousTranslationObject[i]);
-            // console.log('current', this._currentTranslationObject[i]);
-            this._result[i] = _getPreviousPosition.call(this, this._previousTranslationObject[i], this._currentTranslationObject[i]);
-            // console.log(this._result[i]);
+            var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};
+            // if (this._previousTranslationObject === null) {
+            //     this._previousTranslationObject = this._currentTranslationObject;
+            //     this._previousTranslationObject[i] = { position: [0, 0], row: 0 };
+            // }
+            this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
             this._transitionableArray[i].setTranslate([-this._result[i][12], -this._result[i][13] , -this._result[i][14]], {duration: 3000, curve: 'easeInOut'});
-            // this._currentTranslationObject[i].transitionable.setTranslate([200, 200, 0], {duration: 3000, curve: 'easeInOut'});
         }
 
         this.sequenceFrom.call(this, result);
@@ -319,4 +316,7 @@ define(function(require, exports, module) {
     Row 0  ->   Row 2
     How do you know how much distance is between them?
       SOLUTION: keep track of previous row max sizes;
+
+  2. DONE: customCommit now calls just once
+  3. 
 */
