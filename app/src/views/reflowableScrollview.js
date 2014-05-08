@@ -39,7 +39,7 @@ define(function(require, exports, module) {
         duration: 1000,
         curve: 'linear',
         debounceTimer: 1000,
-        gutter: true
+        gutter: false
     };
 
     function _customCommit(context) {
@@ -295,7 +295,6 @@ define(function(require, exports, module) {
         var sequenceItem;
         var currentSequenceItemSize;
 
-
         for (var i = 0; i < sequenceItems.length; i += 1) {
             sequenceItem = sequenceItems[i];
             currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
@@ -309,14 +308,14 @@ define(function(require, exports, module) {
                     totalGutter = contextSize[offsetDirection] - accumulatedSize;
                     gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
                 }
-            } else {
+            } 
+            else {
                 totalGutter = contextSize[offsetDirection] - accumulatedSize;
                 gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
 
                 // reset
                 accumulatedSize = 0;
                 numSequenceItems = 0;
-
                 accumulatedSize += currentSequenceItemSize;
                 numSequenceItems += 1;
             }
@@ -325,6 +324,7 @@ define(function(require, exports, module) {
         return gutterInfo; // => one inner array for each row
     }
 
+    // COPIED OVER FROM SCROLLER.JS - UNMODIFIED
     function _sizeForDir(size) {
         if (!size) size = this._contextSize;
         var dimension = (this.options.direction === Utility.Direction.X) ? 0 : 1;
