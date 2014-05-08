@@ -50,14 +50,19 @@ define(function(require, exports, module) {
             _scroller._onEdge = 0;
             _scroller._contextSize[0] = size[0];
             _scroller._contextSize[1] = size[1];
+
+            this._previousTranslationObject = this._currentTranslationObject;
+
+            if (!this.debounceFlag) {
+                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
+                _timeDebouncedCreateNewViewSequence.call(this, context);
+            }
+            
             if (this.debounceFlag) {
                 _createNewViewSequence.call(this, context);
                 this.debounceFlag = false;
             }
-            this._previousTranslationObject = this._currentTranslationObject;
 
-            var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
-            _timeDebouncedCreateNewViewSequence.call(this, context);
 
 
             if (_scroller.options.direction === Utility.Direction.X) {
@@ -137,7 +142,6 @@ define(function(require, exports, module) {
                 accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
-                // console.log(maxSequenceItemSize);
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
 
@@ -206,14 +210,12 @@ define(function(require, exports, module) {
     function _addToView(view, offset, sequenceItem, idx) {
         // var transitionable;
         var modifier = new Modifier({
-            // transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
             transform: function () { return _customFunction.call(this, offset, idx) }.bind(this)
         });
         view.add(modifier).add(sequenceItem);
     }
 
     function _customFunction(offset, idx) {
-        // console.log('index: ', idx, 'offset: ', offset);
         var fromOrig = this._result[idx];
         var toNew = this._transitionableArray[idx].get();
         return Transform.multiply(fromOrig, toNew);
@@ -255,25 +257,6 @@ define(function(require, exports, module) {
 
         return Transform.multiply(positionTransform, rowTransform);
     }
-
-    // Test
-    // function _addToView(view, offset, sequenceItem) {
-    //     console.log('addtoView');
-    //     var transitionableTransform = new TransitionableTransform();
-    //     var modifier = new Modifier({
-    //         transform: transitionableTransform
-    //     });
-    //     transitionableTransform.setTranslate(this.options.direction === 0 ? [0, offset, 0] : [offset, 0, 0], {duration: 1000});
-    //     view.add(modifier).add(sequenceItem);
-    // }
-
-    // function _transition(view, offset, sequenceItem, index) {
-    //     var transitionableTransform = new TransitionableTransform();
-    //     this._modifier[index].transform = transitionableTransform;
-    //     view.add(this._modifier[index]).add(sequenceItem);
-    //     transitionableTransform.setTranslate([0,offset,0], {duration: 3000});
-    // }
-
 
     function _calculateGutterInfo(sequenceItems, direction, contextSize) {
         // 'this' will be an instance of reflowableScrollview
