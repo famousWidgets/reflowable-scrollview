@@ -213,13 +213,15 @@ define(function(require, exports, module) {
             var trans = Transform.translate.apply(this, [ -this._result[i][12], -this._result[i][13], -this._result[i][14] ]);
             var comb = Transform.multiply(v, trans);
             this._transitionableArray[i].set(comb, {duration: 1000});
-            i === 3 ? console.log(window.prev.position, window.curr.position, res) : '';
+            i === 3 ? console.log(window.prev.position, window.curr.position, res, comb[12], comb[13]) : '';
         }
 
         this.sequenceFrom.call(this, result);
         this._timer = true;
         // return result;
     }
+
+    window.Transform = Transform;
 
     function _addToView(view, offset, sequenceItem, idx) {
         // var transitionable;
