@@ -201,21 +201,13 @@ define(function(require, exports, module) {
 
         for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
             // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
-            var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};
-            i === 3 ? window.prev = prevTransObj : '';
-            i === 3 ? window.curr = this._currentTranslationObject[i] : '';
+            var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};   //
             
             this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
-            i === 3 ? window.res = this._result[i] : '';
 
-            // this._transitionableArray[i].halt();
-            // var v = this._transitionableArray[i].get();
-            // var trans = Transform.translate.apply(this, [ -this._result[i][12], -this._result[i][13], -this._result[i][14] ]);
-            // var comb = Transform.multiply(v, trans);
-
-            // reset transitionable
-            var newPos = this._currentTranslationObject[i].position;
-            var newPosMatrix = Transform.translate(newPos[0], newPos[1]);
+            // // reset transitionable
+            // var newPos = this._currentTranslationObject[i].position;
+            // var newPosMatrix = Transform.translate(newPos[0], newPos[1]);
 
             // reset
             this._transitionableArray[i].halt();
@@ -228,6 +220,9 @@ define(function(require, exports, module) {
             this._transitionableArray[i].set(Transform.identity, {duration: 1000});
 
             // console log of 3
+            i === 3 ? window.prev = prevTransObj : '';
+            i === 3 ? window.curr = this._currentTranslationObject[i] : '';
+            i === 3 ? window.res = this._result[i] : '';
             i === 3 ? console.log(window.prev.position, window.curr.position, res, this._transitionableArray[i].get()) : '';
         }
 
@@ -247,14 +242,11 @@ define(function(require, exports, module) {
     }
 
     function _customFunction(offset, idx) {
-        // var newPos = this._currentTranslationObject[idx].position;
-        // var newPosMatrix = Transform.translate(newPos[0], newPos[1], 0);
-        // var orig = this._result[idx];
-        // var back = Transform.multiply(newPosMatrix, orig);
-        // var toNew = this._transitionableArray[idx].get();
-        // return Transform.multiply(back, toNew);
-        var off = Transform.translate(offset, 0, 0);
-        // var orig = Transform.multiply(off, this._result[idx]);
+        var direction = this.options.direction;
+        var offsetDirection = direction === 0 ? 1 : 0;
+        var vector = [0, 0, 0];
+        vector[offsetDirection] = offset; 
+        var off = Transform.translate.apply(null, vector);
         var trans = this._transitionableArray[idx].get();
         var orig = Transform.multiply(off, trans);
 
@@ -280,19 +272,25 @@ define(function(require, exports, module) {
         var currentRow = currentObj.row;
         var previousRow = previousObj.row;
 
+        var vectorPos = [0, 0, 0];
         if (currentPosition > previousPosition) {
-            positionTransform = Transform.translate(-(currentPosition - previousPosition), 0, 0);
+            vectorPos[offsetDirection] = -(currentPosition - previousPosition);
+            positionTransform = Transform.translate.apply(null, vectorPos);
         }
         else if (previousPosition > currentPosition) {
-            positionTransform = Transform.translate(previousPosition - currentPosition, 0, 0);
+            vectorPos[offsetDirection] = previousPosition - currentPosition;
+            positionTransform = Transform.translate.apply(null, vectorPos);
         }
 
         // calculate the row data separately, cannot be part of the same if/else chain
+        var vectorRow = [0, 0, 0];
         if (currentRow > previousRow) {
-            rowTransform = Transform.translate(0, -previousMax, 0);
+            vectorRow[direction] = -previousMax;
+            rowTransform = Transform.translate.apply(null, vectorRow);
         }
         else if (previousRow > currentRow) {
-            rowTransform = Transform.translate(0, currentMax, 0);
+            vectorRow[direction] = currentMax;
+            rowTransform = Transform.translate.apply(null, vectorRow);
         }
 
         return Transform.multiply(positionTransform, rowTransform);

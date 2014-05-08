@@ -11,13 +11,13 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
-        direction: Utility.Direction.Y
+        direction: Utility.Direction.X
     });
 
     var logos = [];
     // var famousLogo;
     // var hackreactorLogo;
-    var num = 1000;
+    var num = 100;
     var sizeCounter = 1;
     for (var i = 0; i < num; i += 1) {
         // hackreactorLogo = new ImageSurface({
@@ -29,8 +29,8 @@ define(function(require, exports, module) {
         var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
 
         var surface = new Surface({
-            size: [25, 25],
-            // size: [50 * (sizeCounter % 2 + 1), 50 * (sizeCounter % 4 + 1)],
+            // size: [100, 100],
+            size: [50 * (sizeCounter % 2 + 1), 50 * (sizeCounter % 4 + 1)],
             content:  ''+i,
             properties: {
                 backgroundColor: color
