@@ -22,11 +22,11 @@ define(function(require, exports, module) {
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
         this.debounceFlag = true;
-        this._previousSize = [undefined, undefined];
         this._scroller.commit = _customCommit.bind(this);
         this._previousTranslationObject = [];
         this._currentTranslationObject = [];
         this._result = [];
+
     }
 
     reflowableScrollview.prototype = Object.create(ScrollView.prototype);
@@ -54,11 +54,13 @@ define(function(require, exports, module) {
             this._previousTranslationObject = this._currentTranslationObject;
 
             if (!this.debounceFlag) {
-                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,1000);
+                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence,200);
                 _timeDebouncedCreateNewViewSequence.call(this, context);
             }
 
+            // first time execution of this code
             if (this.debounceFlag) {
+                initTransitionables.call(this); // initialize array of transitionables
                 _createNewViewSequence.call(this, context);
                 this.debounceFlag = false;
             }
@@ -85,6 +87,15 @@ define(function(require, exports, module) {
         };
     }
 
+    function initTransitionables () {
+        this._transitionableArray = [];
+        for (var i = 0; i < this._node._.array.length; i += 1) {
+            this._transitionableArray.push(new TransitionableTransform());
+        }
+        // greg testing, remove later //
+        window.tt = this._transitionableArray;
+    }
+
     function _createNewViewSequence(context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
@@ -107,12 +118,6 @@ define(function(require, exports, module) {
         var currentSequenceItemMaxSize;
         var translationObject = [];
         var xyCoordinates = [];
-
-        this._transitionableArray = [];
-
-        for (var i = 0; i < this._originalArray.length; i += 1) {
-            this._transitionableArray.push(new TransitionableTransform());
-        }
 
         for (var j = 0; j < this._originalArray.length; j += 1) {
             sequenceItem = this._originalArray[j];
@@ -191,11 +196,9 @@ define(function(require, exports, module) {
         this._currentTranslationObject = translationObject;
 
         for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
+            // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
             var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};
-            // if (this._previousTranslationObject === null) {
-            //     this._previousTranslationObject = this._currentTranslationObject;
-            //     this._previousTranslationObject[i] = { position: [0, 0], row: 0 };
-            // }
+            
             this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
             this._transitionableArray[i].setTranslate([-this._result[i][12], -this._result[i][13] , -this._result[i][14]], {duration: 3000, curve: 'easeInOut'});
         }
