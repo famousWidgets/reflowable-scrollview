@@ -15,3 +15,7 @@ dist
 .tmp
 app/lib
 .yo-rc.json
+
+# images #
+##########
+app/content/images/pic

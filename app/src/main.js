@@ -12,48 +12,57 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
-        // direction: Utility.Direction.Y,
-        // curve: Easing.inOutBounce,
-        // duration: 200,
-        // debounceTimer: 2000
+        direction: Utility.Direction.Y,
+        curve: Easing.outBounce,
+        duration: 1000,
+        debounceTimer: 250
         // gutter: false
     });
 
-    var logos = [];
+    var pics = [];
     // var famousLogo;
-    // var hackreactorLogo;
+    // var starryNight;
     var num = 100;
     var sizeCounter = 1;
-    for (var i = 0; i < num; i += 1) {
-        // hackreactorLogo = new ImageSurface({
-        //     size: [200, 200],
-        //     content: '/content/images/hack_reactor.png',
-        //     classes: ['backfaceVisibility']
+
+    // for starry night, original size is 1920 x 1080
+    var xScale = 1; // 1920/1400;
+    var yScale = 1; // 1080/800;
+
+    for (var i = 0; i < 10; i += 1) {
+        for (var j = 0; j < 10; j+=1) {
+            var starryNight = new ImageSurface({
+                size: [100 * xScale, 100 * yScale],
+                content: '/content/images/starrynight/starry-night-2d-3d [www.imagesplitter.net]-' + i +'-' + j +'.png',
+                classes: ['backfaceVisibility']
+            });
+            sizeCounter++;
+            reflowable.subscribe(starryNight);
+            pics.push(starryNight);
+        }
+
+        // var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
+
+        // var surface = new Surface({
+        //     size: [100, 100],
+        //     // size: [50 * (sizeCounter % 2 + 1), 50 * (sizeCounter % 4 + 1)],
+        //     content:  ''+i,
+        //     properties: {
+        //         backgroundColor: color
+        //     }
         // });
-
-        var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
-
-        var surface = new Surface({
-            size: [100, 100],
-            // size: [50 * (sizeCounter % 2 + 1), 50 * (sizeCounter % 4 + 1)],
-            content:  ''+i,
-            properties: {
-                backgroundColor: color
-            }
-        });
-        sizeCounter++;
-        // reflowable.subscribe(hackreactorLogo);
-        // logos.push(hackreactorLogo);
-        reflowable.subscribe(surface);
-        logos.push(surface);
+        // reflowable.subscribe(surface);
+        // pics.push(surface);
     }
 
     var mainContext = Engine.createContext();
 
-    reflowable.sequenceFrom(logos);
+    reflowable.sequenceFrom(pics);
 
     // make available on window for testing
     window.reflowable = reflowable;
+
+    mainContext.setPerspective(500);
 
     mainContext.add(reflowable);
 

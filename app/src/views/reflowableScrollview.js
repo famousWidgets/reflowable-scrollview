@@ -29,7 +29,6 @@ define(function(require, exports, module) {
         this._currentTranslationObject = [];
         this._result = [];
         this._timer = true;
-
     }
 
     reflowableScrollview.prototype = Object.create(ScrollView.prototype);
@@ -40,7 +39,8 @@ define(function(require, exports, module) {
         duration: 1000,
         curve: 'linear',
         debounceTimer: 1000,
-        gutter: true
+        gutter: false,
+        defaultZ: 0
     };
 
     function _customCommit(context) {
@@ -67,14 +67,12 @@ define(function(require, exports, module) {
                 this._timer = false;
             }
 
-            // first time execution of this code
+            // first time execution of this reflowable scroll view, the following gets run only once
             if (this.debounceFlag) {
                 initTransitionables.call(this); // initialize array of transitionables
                 _createNewViewSequence.call(this, context);
                 this.debounceFlag = false;
             }
-
-
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -113,15 +111,16 @@ define(function(require, exports, module) {
         var offsetDirection = (direction === 0 ? 1 : 0);
         var contextSize = context.size; // this is an array
         var result = [];
+        var accumulate = {};
+        accumulate.accumulatedSize = 0;
+        accumulate.rowNumber = 0;
+        accumulate.rowNumberCounter = 1;
 
         var currentView = new View();
-        var accumulatedSize = 0;
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
         var accumulatedSizeWithGutter;
-        var rowNumber = 0;
-        var rowNumberCounter = 1;
         var sequenceItem;
         var currentSequenceItemSize;
         var currentSequenceItemMaxSize;
@@ -134,7 +133,7 @@ define(function(require, exports, module) {
             currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
 
             // Check if sum of item sizes is larger than context size
-            if (accumulatedSize + currentSequenceItemSize <= contextSize[offsetDirection]) {
+            if (accumulate.accumulatedSize + currentSequenceItemSize <= contextSize[offsetDirection]) {
 
                 // find max view size
                 if (currentSequenceItemMaxSize > maxSequenceItemSize) {
@@ -142,36 +141,25 @@ define(function(require, exports, module) {
                 }
 
                 // first sequenceItem will be on the left / top most edge
-                if (accumulatedSize === 0) {
-                    accumulatedSizeWithGutter = accumulatedSize;
-                } else {
-                    // want to include number of gutters proportional to the number of items in a row
-                    accumulatedSizeWithGutter = this.options.gutter ? accumulatedSizeWithGutter = accumulatedSize + gutterInfo[rowNumber][0] * (rowNumberCounter === gutterInfo[rowNumber][1] ? rowNumberCounter : rowNumberCounter++): accumulatedSize;
-                }
+                accumulatedSizeWithGutter = _gutter.call(this, accumulate);
 
                 // collect xyCoordinates of each item
                 xyCoordinates.push([accumulatedSizeWithGutter]);
 
                 _addToView.call(this, currentView, accumulatedSizeWithGutter, sequenceItem, j);
-                accumulatedSize += currentSequenceItemSize;
+                accumulate.accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
-                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
 
                 // add max view size to each xyCoordinates subarray
-                xyCoordinates.forEach(function(array) {
-                    var element = {};
-                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
-                    element['row'] = rowNumber;
-                    // element['transitionable'] = new TransitionableTransform();
-                    translationObject.push(element);
-                });
+                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, accumulate.rowNumber, translationObject);
 
                 // reset
-                rowNumber += 1; // make sure we're increasing rowNumber so that we're grabbing correct info from gutterInfo
-                rowNumberCounter = 1;
-                accumulatedSize = 0;
+                accumulate.rowNumber += 1; // make sure we're increasing accumulate.rowNumber so that we're grabbing correct info from gutterInfo
+                accumulate.rowNumberCounter = 1;
+                accumulate.accumulatedSize = 0;
                 maxSequenceItemSize = 0;
                 currentView = new View();
                 xyCoordinates = [];
@@ -183,61 +171,96 @@ define(function(require, exports, module) {
                     maxSequenceItemSize = currentSequenceItemMaxSize;
                 }
 
-                xyCoordinates.push([accumulatedSize]);
-                _addToView.call(this, currentView, accumulatedSize, sequenceItem, j);
-                accumulatedSize += currentSequenceItemSize;
+                xyCoordinates.push([accumulate.accumulatedSize]);
+                _addToView.call(this, currentView, accumulate.accumulatedSize, sequenceItem, j);
+                accumulate.accumulatedSize += currentSequenceItemSize;
             }
 
-                // remnant items in currentView
+            // remnant items in currentView
             if (j === this._originalArray.length - 1) {
-                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
-                xyCoordinates.forEach(function(array) {
-                    var element = {};
-                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
-                    element['row'] = rowNumber;
-                    // element['transitionable'] = new TransitionableTransform();
-                    translationObject.push(element);
-                });
+                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, accumulate.rowNumber, translationObject);
             }
         }
 
         // console.log('translationObject ', translationObject);
         this._currentTranslationObject = translationObject;
 
-        for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
-            // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
-            var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};   //
-            
-            this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
-
-            // // reset transitionable
-            // var newPos = this._currentTranslationObject[i].position;
-            // var newPosMatrix = Transform.translate(newPos[0], newPos[1]);
-
-            // reset
-            this._transitionableArray[i].halt();
-            this._transitionableArray[i].set(Transform.identity);
-
-            // go to prev
-            this._transitionableArray[i].set(this._result[i]);
-
-            // animate back to current
-            this._transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
-
-            // console log of 3
-            i === 3 ? window.prev = prevTransObj : '';
-            i === 3 ? window.curr = this._currentTranslationObject[i] : '';
-            i === 3 ? window.res = this._result[i] : '';
-            i === 3 ? console.log(window.prev.position, window.curr.position, res, this._transitionableArray[i].get()) : '';
-        }
+        setTransitionables.call(this, this._currentTranslationObject, this._previousTranslationObject, this._transitionableArray);
 
         this.sequenceFrom.call(this, result);
         this._timer = true;
         // return result;
     }
 
-    window.Transform = Transform;
+    function _gutter (accumulate) {
+        if (accumulate.accumulatedSize === 0) {
+            return accumulate.accumulatedSize;
+        } else if (this.options.gutter) {
+            var t = accumulate.rowNumberCounter === gutterInfo[accumulate.rowNumber][1] ? accumulate.rowNumberCounter : accumulate.rowNumberCounter++;
+            return accumulate.accumulatedSize + gutterInfo[accumulate.rowNumber][0] * t;
+            // want to include number of gutters proportional to the number of items in a row
+            // accumulatedSizeWithGutter = this.options.gutter ? accumulatedSizeWithGutter = accumulate.accumulatedSize + gutterInfo[accumulate.rowNumber][0] * (accumulate.rowNumberCounter === gutterInfo[accumulate.rowNumber][1] ? accumulate.rowNumberCounter : accumulate.rowNumberCounter++): accumulate.accumulatedSize;
+
+        } else {
+            return accumulate.accumulatedSize;
+        }
+    }
+
+    function _createXYCoordinates (xyCoordinates, maxSequenceItemSize, rowNumber, translationObject) {
+        var direction = this.options.direction;
+        xyCoordinates.forEach(function(array) {
+            var element = {};
+            element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
+            element['row'] = rowNumber;
+            // element['transitionable'] = new TransitionableTransform();
+            translationObject.push(element);
+        }.bind(this));
+    }
+
+    // sets each transitionableTransform in the this._transitionableArray to original position, and animate back to new position
+    // returns the newly set transitionable array. This is called once per resizing. 
+    function setTransitionables (currTranslationObj, prevTranslationObj, transitionableArray) {
+        var defaultPrev = {position: [0,0, this.options.defaultZ], row: 0}
+
+        for (var i = 0; i < currTranslationObj.length; i += 1) {
+            // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
+            var prevObj = prevTranslationObj[i] || defaultPrev;
+            
+            this._result[i] = _getPreviousPosition.call(this, prevObj, currTranslationObj[i]);
+
+            // reset
+            transitionableArray[i].halt();
+            transitionableArray[i].set(this._result[i]);
+            // if (i === 3 ) {
+            //     i === 3 ? console.log('isActive') : '';
+            //     transitionableArray[i].halt();
+            //     // 
+            //     transitionableArray[i].set(Transform.translate(100, 0, 1), {duration: 1000});
+            //     transitionableArray[i].set(Transform.translate(100, 100, 1), {duration: 1000});
+            //     transitionableArray[i].set(Transform.translate(0, 100, 1), {duration: 1000});
+            //     transitionableArray[i].set(Transform.translate(0, 0, 1), {duration: 1000});
+
+            // } else {
+            //     transitionableArray[i].set(this._result[i]);
+            // }
+            // transitionableArray[i].set(Transform.identity);
+
+            // go to prev
+
+            // animate back to current
+            transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
+
+            // // console log of 3
+            i === 3 ? window.prev = prevObj : '';
+            i === 3 ? window.curr = currTranslationObj[i] : '';
+            i === 3 ? window.res = this._result[i] : '';
+            i === 3 ? console.log(window.prev.position, window.curr.position, res, transitionableArray[i].get()) : '';
+        }
+
+        return transitionableArray;
+    }
 
     function _addToView(view, offset, sequenceItem, idx) {
         // var transitionable;
@@ -268,7 +291,7 @@ define(function(require, exports, module) {
         var rowTransform = Transform.identity;
 
         // element['position'] = [array[0],maxSequenceItemSize] OR [maxSequenceItemSize, array[0]];
-        // element['row'] = rowNumber;
+        // element['row'] = accumulate.rowNumber;
 
         // if scrolling along Y:
         var currentPosition = currentObj.position[offsetDirection];
@@ -340,6 +363,7 @@ define(function(require, exports, module) {
                 numSequenceItems += 1;
             }
         }
+        window.g = gutterInfo;
 
         return gutterInfo; // [[total gutter / number of items, number of items]] => one inner array for each row
     }
@@ -357,3 +381,10 @@ define(function(require, exports, module) {
 
     module.exports = reflowableScrollview;
 });
+
+/*
+
+  Animation bug: 
+  - IF resizing WHILE there's an animation resize, the items jump to end position, then moves to the new position. 
+
+*/
