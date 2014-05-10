@@ -12,17 +12,17 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
-        // direction: Utility.Direction.Y,
+        direction: Utility.Direction.X,
         curve: Easing.outBounce,
         duration: 1000,
-        debounceTimer: 500
+        debounceTimer: 250
         // gutter: false
     });
 
     var logos = [];
     // var famousLogo;
     // var hackreactorLogo;
-    var num = 20;
+    var num = 100;
     var sizeCounter = 1;
     for (var i = 0; i < num; i += 1) {
         // for (var j = 0; j < 10; j+=1) {

@@ -159,13 +159,7 @@ define(function(require, exports, module) {
                 result.push(currentView);
 
                 // add max view size to each xyCoordinates subarray
-                xyCoordinates.forEach(function(array) {
-                    var element = {};
-                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
-                    element['row'] = rowNumber;
-                    // element['transitionable'] = new TransitionableTransform();
-                    translationObject.push(element);
-                }.bind(this));
+                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, rowNumber, translationObject);
 
                 // reset
                 rowNumber += 1; // make sure we're increasing rowNumber so that we're grabbing correct info from gutterInfo
@@ -191,13 +185,7 @@ define(function(require, exports, module) {
             if (j === this._originalArray.length - 1) {
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
-                xyCoordinates.forEach(function(array) {
-                    var element = {};
-                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
-                    element['row'] = rowNumber;
-                    // element['transitionable'] = new TransitionableTransform();
-                    translationObject.push(element);
-                }.bind(this));
+                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, rowNumber, translationObject);
             }
         }
 
@@ -211,17 +199,31 @@ define(function(require, exports, module) {
         // return result;
     }
 
+    function _createXYCoordinates (xyCoordinates, maxSequenceItemSize, rowNumber, translationObject) {
+        var direction = this.options.direction;
+        xyCoordinates.forEach(function(array) {
+            var element = {};
+            element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
+            element['row'] = rowNumber;
+            // element['transitionable'] = new TransitionableTransform();
+            translationObject.push(element);
+        }.bind(this));
+    }
+
+    // sets each transitionableTransform in the this._transitionableArray to original position, and animate back to new position
+    // returns the newly set transitionable array. This is called once per resizing. 
     function setTransitionables (currTranslationObj, prevTranslationObj, transitionableArray) {
+        var defaultPrev = {position: [0,0, this.options.defaultZ], row: 0}
 
         for (var i = 0; i < currTranslationObj.length; i += 1) {
             // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
-            var prevObj = prevTranslationObj[i] || {position: [0,0, this.options.defaultZ], row: 0};
+            var prevObj = prevTranslationObj[i] || defaultPrev;
             
             this._result[i] = _getPreviousPosition.call(this, prevObj, currTranslationObj[i]);
 
             // reset
             transitionableArray[i].halt();
-            transitionableArray[i].set(Transform.identity);
+            // transitionableArray[i].set(Transform.identity);
 
             // go to prev
             transitionableArray[i].set(this._result[i]);
@@ -229,12 +231,14 @@ define(function(require, exports, module) {
             // animate back to current
             transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
 
-            // console log of 3
-            // i === 3 ? window.prev = prevTranslationObj : '';
-            // i === 3 ? window.curr = currTransObj[i] : '';
-            // i === 3 ? window.res = this._result[i] : '';
-            // i === 3 ? console.log(window.prev.position, window.curr.position, res, transitionableArray[i].get()) : '';
+            // // console log of 3
+            i === 3 ? window.prev = prevObj : '';
+            i === 3 ? window.curr = currTranslationObj[i] : '';
+            i === 3 ? window.res = this._result[i] : '';
+            i === 3 ? console.log(window.prev.position, window.curr.position, res, transitionableArray[i].get()) : '';
         }
+
+        return transitionableArray;
     }
 
     function _addToView(view, offset, sequenceItem, idx) {
@@ -356,3 +360,10 @@ define(function(require, exports, module) {
 
     module.exports = reflowableScrollview;
 });
+
+/*
+
+  Animation bug: 
+  - IF resizing WHILE there's an animation resize, the items jump to end position, then moves to the new position. 
+
+*/
