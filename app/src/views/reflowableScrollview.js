@@ -40,7 +40,8 @@ define(function(require, exports, module) {
         duration: 1000,
         curve: 'linear',
         debounceTimer: 1000,
-        gutter: true
+        gutter: false,
+        defaultZ: 0
     };
 
     function _customCommit(context) {
@@ -156,17 +157,17 @@ define(function(require, exports, module) {
                 accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
-                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
 
                 // add max view size to each xyCoordinates subarray
                 xyCoordinates.forEach(function(array) {
                     var element = {};
-                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
+                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
                     element['row'] = rowNumber;
                     // element['transitionable'] = new TransitionableTransform();
                     translationObject.push(element);
-                });
+                }.bind(this));
 
                 // reset
                 rowNumber += 1; // make sure we're increasing rowNumber so that we're grabbing correct info from gutterInfo
@@ -190,15 +191,15 @@ define(function(require, exports, module) {
 
                 // remnant items in currentView
             if (j === this._originalArray.length - 1) {
-                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
                 xyCoordinates.forEach(function(array) {
                     var element = {};
-                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
+                    element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
                     element['row'] = rowNumber;
                     // element['transitionable'] = new TransitionableTransform();
                     translationObject.push(element);
-                });
+                }.bind(this));
             }
         }
 
@@ -207,7 +208,7 @@ define(function(require, exports, module) {
 
         for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
             // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
-            var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};   //
+            var prevTransObj = this._previousTranslationObject[i] || {position: [0,0, this.options.defaultZ], row: 0};   //
             
             this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
 

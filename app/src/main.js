@@ -13,23 +13,29 @@ define(function(require, exports, module) {
     // your app here
     var reflowable = new ReflowableScrollview({
         // direction: Utility.Direction.Y,
-        // curve: Easing.inOutBounce,
-        // duration: 200,
-        // debounceTimer: 2000
+        curve: Easing.outBounce,
+        duration: 400,
+        debounceTimer: 500
         // gutter: false
     });
 
     var logos = [];
     // var famousLogo;
     // var hackreactorLogo;
-    var num = 100;
+    var num = 1000;
     var sizeCounter = 1;
     for (var i = 0; i < num; i += 1) {
-        // hackreactorLogo = new ImageSurface({
-        //     size: [200, 200],
-        //     content: '/content/images/hack_reactor.png',
-        //     classes: ['backfaceVisibility']
-        // });
+        // for (var j = 0; j < 10; j+=1) {
+        //     hackreactorLogo = new ImageSurface({
+        //         size: [100, 100],
+        //         content: '/content/images/pic/20140109_160649 [www.imagesplitter.net]-' + i +'-' + j +'.jpeg',
+        //         classes: ['backfaceVisibility']
+        //     });
+        //     sizeCounter++;
+        //     reflowable.subscribe(hackreactorLogo);
+        //     logos.push(hackreactorLogo);
+
+        // }
 
         var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
 
@@ -41,9 +47,6 @@ define(function(require, exports, module) {
                 backgroundColor: color
             }
         });
-        sizeCounter++;
-        // reflowable.subscribe(hackreactorLogo);
-        // logos.push(hackreactorLogo);
         reflowable.subscribe(surface);
         logos.push(surface);
     }
@@ -54,6 +57,8 @@ define(function(require, exports, module) {
 
     // make available on window for testing
     window.reflowable = reflowable;
+
+    mainContext.setPerspective(500);
 
     mainContext.add(reflowable);
 
