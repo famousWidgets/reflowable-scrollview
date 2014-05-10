@@ -25,11 +25,14 @@ define(function(require, exports, module) {
     var num = 100;
     var sizeCounter = 1;
 
-    // for starry night
+    // for starry night, original size is 1920 x 1080
+    var xScale = 1; // 1920/1400;
+    var yScale = 1; // 1080/800;
+
     for (var i = 0; i < 10; i += 1) {
         for (var j = 0; j < 10; j+=1) {
             var starryNight = new ImageSurface({
-                size: [100, 100],
+                size: [100 * xScale, 100 * yScale],
                 content: '/content/images/starrynight/starry-night-2d-3d [www.imagesplitter.net]-' + i +'-' + j +'.png',
                 classes: ['backfaceVisibility']
             });
