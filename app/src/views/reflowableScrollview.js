@@ -111,11 +111,16 @@ define(function(require, exports, module) {
         var result = [];
 
         var currentView = new View();
+        
+        // Used for determining the offset size
         var accumulatedSize = 0;
+        var accumulatedSizeWithGutter;
+        
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
+        
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
-        var accumulatedSizeWithGutter;
+        
         var rowNumber = 0;
         var rowNumberCounter = 1;
         var sequenceItem;
