@@ -29,7 +29,6 @@ define(function(require, exports, module) {
         this._currentTranslationObject = [];
         this._result = [];
         this._timer = true;
-
     }
 
     reflowableScrollview.prototype = Object.create(ScrollView.prototype);
@@ -112,16 +111,16 @@ define(function(require, exports, module) {
         var offsetDirection = (direction === 0 ? 1 : 0);
         var contextSize = context.size; // this is an array
         var result = [];
-        var test = {};
+        var accumulate = {};
+        accumulate.accumulatedSize = 0;
+        accumulate.rowNumber = 0;
+        accumulate.rowNumberCounter = 1;
 
         var currentView = new View();
-        test.accumulatedSize = 0;
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
         var accumulatedSizeWithGutter;
-        test.rowNumber = 0;
-        test.rowNumberCounter = 1;
         var sequenceItem;
         var currentSequenceItemSize;
         var currentSequenceItemMaxSize;
@@ -134,7 +133,7 @@ define(function(require, exports, module) {
             currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
 
             // Check if sum of item sizes is larger than context size
-            if (test.accumulatedSize + currentSequenceItemSize <= contextSize[offsetDirection]) {
+            if (accumulate.accumulatedSize + currentSequenceItemSize <= contextSize[offsetDirection]) {
 
                 // find max view size
                 if (currentSequenceItemMaxSize > maxSequenceItemSize) {
@@ -142,26 +141,25 @@ define(function(require, exports, module) {
                 }
 
                 // first sequenceItem will be on the left / top most edge
-
-                accumulatedSizeWithGutter = _gutter.call(this, test);
+                accumulatedSizeWithGutter = _gutter.call(this, accumulate);
 
                 // collect xyCoordinates of each item
                 xyCoordinates.push([accumulatedSizeWithGutter]);
 
                 _addToView.call(this, currentView, accumulatedSizeWithGutter, sequenceItem, j);
-                test.accumulatedSize += currentSequenceItemSize;
+                accumulate.accumulatedSize += currentSequenceItemSize;
             } else {
                 // result array is populated enough
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
 
                 // add max view size to each xyCoordinates subarray
-                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, test.rowNumber, translationObject);
+                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, accumulate.rowNumber, translationObject);
 
                 // reset
-                test.rowNumber += 1; // make sure we're increasing test.rowNumber so that we're grabbing correct info from gutterInfo
-                test.rowNumberCounter = 1;
-                test.accumulatedSize = 0;
+                accumulate.rowNumber += 1; // make sure we're increasing accumulate.rowNumber so that we're grabbing correct info from gutterInfo
+                accumulate.rowNumberCounter = 1;
+                accumulate.accumulatedSize = 0;
                 maxSequenceItemSize = 0;
                 currentView = new View();
                 xyCoordinates = [];
@@ -173,16 +171,16 @@ define(function(require, exports, module) {
                     maxSequenceItemSize = currentSequenceItemMaxSize;
                 }
 
-                xyCoordinates.push([test.accumulatedSize]);
-                _addToView.call(this, currentView, test.accumulatedSize, sequenceItem, j);
-                test.accumulatedSize += currentSequenceItemSize;
+                xyCoordinates.push([accumulate.accumulatedSize]);
+                _addToView.call(this, currentView, accumulate.accumulatedSize, sequenceItem, j);
+                accumulate.accumulatedSize += currentSequenceItemSize;
             }
 
-                // remnant items in currentView
+            // remnant items in currentView
             if (j === this._originalArray.length - 1) {
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
-                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, test.rowNumber, translationObject);
+                _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, accumulate.rowNumber, translationObject);
             }
         }
 
@@ -195,17 +193,18 @@ define(function(require, exports, module) {
         this._timer = true;
         // return result;
     }
-    function _gutter (test) {
-        if (test.accumulatedSize === 0) {
-            return test.accumulatedSize;
+
+    function _gutter (accumulate) {
+        if (accumulate.accumulatedSize === 0) {
+            return accumulate.accumulatedSize;
         } else if (this.options.gutter) {
-            var t = test.rowNumberCounter === gutterInfo[test.rowNumber][1] ? test.rowNumberCounter : test.rowNumberCounter++;
-            return test.accumulatedSize + gutterInfo[test.rowNumber][0] * t;
+            var t = accumulate.rowNumberCounter === gutterInfo[accumulate.rowNumber][1] ? accumulate.rowNumberCounter : accumulate.rowNumberCounter++;
+            return accumulate.accumulatedSize + gutterInfo[accumulate.rowNumber][0] * t;
             // want to include number of gutters proportional to the number of items in a row
-            // accumulatedSizeWithGutter = this.options.gutter ? accumulatedSizeWithGutter = test.accumulatedSize + gutterInfo[test.rowNumber][0] * (test.rowNumberCounter === gutterInfo[test.rowNumber][1] ? test.rowNumberCounter : test.rowNumberCounter++): test.accumulatedSize;
+            // accumulatedSizeWithGutter = this.options.gutter ? accumulatedSizeWithGutter = accumulate.accumulatedSize + gutterInfo[accumulate.rowNumber][0] * (accumulate.rowNumberCounter === gutterInfo[accumulate.rowNumber][1] ? accumulate.rowNumberCounter : accumulate.rowNumberCounter++): accumulate.accumulatedSize;
 
         } else {
-            return test.accumulatedSize;
+            return accumulate.accumulatedSize;
         }
     }
 
@@ -292,7 +291,7 @@ define(function(require, exports, module) {
         var rowTransform = Transform.identity;
 
         // element['position'] = [array[0],maxSequenceItemSize] OR [maxSequenceItemSize, array[0]];
-        // element['row'] = test.rowNumber;
+        // element['row'] = accumulate.rowNumber;
 
         // if scrolling along Y:
         var currentPosition = currentObj.position[offsetDirection];
