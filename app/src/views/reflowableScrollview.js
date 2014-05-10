@@ -68,14 +68,12 @@ define(function(require, exports, module) {
                 this._timer = false;
             }
 
-            // first time execution of this code
+            // first time execution of this reflowable scroll view, the following gets run only once
             if (this.debounceFlag) {
                 initTransitionables.call(this); // initialize array of transitionables
                 _createNewViewSequence.call(this, context);
                 this.debounceFlag = false;
             }
-
-
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -206,39 +204,38 @@ define(function(require, exports, module) {
         // console.log('translationObject ', translationObject);
         this._currentTranslationObject = translationObject;
 
-        for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
-            // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
-            var prevTransObj = this._previousTranslationObject[i] || {position: [0,0, this.options.defaultZ], row: 0};   //
-            
-            this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
-
-            // // reset transitionable
-            // var newPos = this._currentTranslationObject[i].position;
-            // var newPosMatrix = Transform.translate(newPos[0], newPos[1]);
-
-            // reset
-            this._transitionableArray[i].halt();
-            this._transitionableArray[i].set(Transform.identity);
-
-            // go to prev
-            this._transitionableArray[i].set(this._result[i]);
-
-            // animate back to current
-            this._transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
-
-            // console log of 3
-            i === 3 ? window.prev = prevTransObj : '';
-            i === 3 ? window.curr = this._currentTranslationObject[i] : '';
-            i === 3 ? window.res = this._result[i] : '';
-            i === 3 ? console.log(window.prev.position, window.curr.position, res, this._transitionableArray[i].get()) : '';
-        }
+        setTransitionables.call(this, this._currentTranslationObject, this._previousTranslationObject, this._transitionableArray);
 
         this.sequenceFrom.call(this, result);
         this._timer = true;
         // return result;
     }
 
-    window.Transform = Transform;
+    function setTransitionables (currTranslationObj, prevTranslationObj, transitionableArray) {
+
+        for (var i = 0; i < currTranslationObj.length; i += 1) {
+            // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
+            var prevObj = prevTranslationObj[i] || {position: [0,0, this.options.defaultZ], row: 0};
+            
+            this._result[i] = _getPreviousPosition.call(this, prevObj, currTranslationObj[i]);
+
+            // reset
+            transitionableArray[i].halt();
+            transitionableArray[i].set(Transform.identity);
+
+            // go to prev
+            transitionableArray[i].set(this._result[i]);
+
+            // animate back to current
+            transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
+
+            // console log of 3
+            // i === 3 ? window.prev = prevTranslationObj : '';
+            // i === 3 ? window.curr = currTransObj[i] : '';
+            // i === 3 ? window.res = this._result[i] : '';
+            // i === 3 ? console.log(window.prev.position, window.curr.position, res, transitionableArray[i].get()) : '';
+        }
+    }
 
     function _addToView(view, offset, sequenceItem, idx) {
         // var transitionable;
@@ -341,6 +338,7 @@ define(function(require, exports, module) {
                 numSequenceItems += 1;
             }
         }
+        window.g = gutterInfo;
 
         return gutterInfo; // [[total gutter / number of items, number of items]] => one inner array for each row
     }
