@@ -23,13 +23,13 @@ define(function(require, exports, module) {
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
 
-        this.debounceFlag = true;
+
+        this._debounceFlag = true;
         this._scroller.commit = _customCommit.bind(this);
         this._previousTranslationObject = [];
         this._currentTranslationObject = [];
         this._result = [];
         this._timer = true;
-
     }
 
     reflowableScrollview.prototype = Object.create(ScrollView.prototype);
@@ -61,20 +61,18 @@ define(function(require, exports, module) {
 
             this._previousTranslationObject = this._currentTranslationObject;
 
-            if (!this.debounceFlag && this._timer) {
+            if (!this._debounceFlag && this._timer) {
                 var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence, this.options.debounceTimer);
                 _timeDebouncedCreateNewViewSequence.call(this, context);
                 this._timer = false;
             }
 
             // first time execution of this code
-            if (this.debounceFlag) {
+            if (this._debounceFlag) {
                 initTransitionables.call(this); // initialize array of transitionables
                 _createNewViewSequence.call(this, context);
-                this.debounceFlag = false;
+                this._debounceFlag = false;
             }
-
-
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -101,10 +99,9 @@ define(function(require, exports, module) {
         for (var i = 0; i < this._node._.array.length; i += 1) {
             this._transitionableArray.push(new TransitionableTransform());
         }
-        // greg testing, remove later //
-        window.tt = this._transitionableArray;
     }
 
+    // THIS IS NOT CORRECT RIGHT NOW
     function _createNewViewSequence(context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
@@ -114,11 +111,31 @@ define(function(require, exports, module) {
         var contextSize = context.size; // this is an array
         var result = [];
 
-        var currentView = new View();
-        var accumulatedSize = 0;
-        var maxSequenceItemSize = 0;
-        var numSequenceItems = 0;
+        var currentView;
+        var gutterObj;
+        var offsetPositionsWithGutter;
+        
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
+        // testing purposes
+        window.gutterInfo = gutterInfo;
+
+
+        /* NEW VERSION */
+
+        // create views
+        for (var j = 0; j < gutterInfo.length; j += 1) {
+            currentView = new View();
+            gutterObj = gutterInfo[j]; // each object looks like this: // obj -> {maxDimension: 100, numItems: 10, offsetDirectionArray: [ array of starting x or y positions ], spaceBetween: 20}
+            offsetPositionsWithGutter = _calculateStartingPosition(gutterObj); // an array of starting positions for each surface
+            offsetPositionsWithGutter.forEach(function (offset, idx) {
+                _addToView.call(this, currentView, offset, this._originalArray[gutterInfo[0].numItems * j + idx]);
+            }.bind(this));
+            currentView.setOptions({ size: (direction === 1 ? [undefined, gutterObj.maxDimension] : [gutterObj.maxDimension, undefined]) });
+            result.push(currentView);
+        }
+
+        /* OLD VERSION */
+
         var accumulatedSizeWithGutter;
         var rowNumber = 0;
         var rowNumberCounter = 1;
@@ -202,18 +219,10 @@ define(function(require, exports, module) {
             }
         }
 
-        // console.log('translationObject ', translationObject);
-        this._currentTranslationObject = translationObject;
-
         for (var i = 0; i < this._currentTranslationObject.length; i += 1) {
             // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
             var prevTransObj = this._previousTranslationObject[i] || {position: [0,0], row: 0};   //
-            
             this._result[i] = _getPreviousPosition.call(this, prevTransObj, this._currentTranslationObject[i]);
-
-            // // reset transitionable
-            // var newPos = this._currentTranslationObject[i].position;
-            // var newPosMatrix = Transform.translate(newPos[0], newPos[1]);
 
             // reset
             this._transitionableArray[i].halt();
@@ -226,23 +235,21 @@ define(function(require, exports, module) {
             this._transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
 
             // console log of 3
-            i === 3 ? window.prev = prevTransObj : '';
-            i === 3 ? window.curr = this._currentTranslationObject[i] : '';
-            i === 3 ? window.res = this._result[i] : '';
-            i === 3 ? console.log(window.prev.position, window.curr.position, res, this._transitionableArray[i].get()) : '';
+            // i === 3 ? window.prev = prevTransObj : '';
+            // i === 3 ? window.curr = this._currentTranslationObject[i] : '';
+            // i === 3 ? window.res = this._result[i] : '';
+            // i === 3 ? console.log(window.prev.position, window.curr.position, res, this._transitionableArray[i].get()) : '';
         }
 
-        this.sequenceFrom.call(this, result);
+        /* OLD AND NEW VERSION */
         this._timer = true;
-        // return result;
+        this.sequenceFrom.call(this, result);
     }
 
-    window.Transform = Transform;
-
-    function _addToView(view, offset, sequenceItem, idx) {
-        // var transitionable;
+    function _addToView(view, offset, sequenceItem) {
         var modifier = new Modifier({
-            transform: function () { return _customFunction.call(this, offset, idx) }.bind(this)
+            // transform: this.options.direction === 0 ? Transform.translate(0, offset, 0) : Transform.translate(offset, 0, 0)
+            transform: function () { return _customFunction.call(this, offset, idx); }.bind(this)
         });
         view.add(modifier).add(sequenceItem);
     }
@@ -306,42 +313,112 @@ define(function(require, exports, module) {
         // 'this' will be an instance of reflowableScrollview
         // _calculateGetter.call(this, this._originalArray, direction)
 
+        var gutterInfo = [];
         var offsetDirection = (direction === 0 ? 1 : 0);
         var accumulatedSize = 0;
         var numSequenceItems = 0;
-        var gutterInfo = [];
+        var maxSequenceItemSize = 0;
         var totalGutter;
         var sequenceItem;
         var currentSequenceItemSize;
-
+        var currentSequenceItemMaxSize;
+        var offsetDirectionArray = [];
 
         for (var i = 0; i < sequenceItems.length; i += 1) {
             sequenceItem = sequenceItems[i];
+            console.log(sequenceItem);
             currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
+            // console.log('currentSequenceItemSize', currentSequenceItemSize);
+            currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
+            // console.log('currentSequenceItemMaxSize', currentSequenceItemMaxSize);
+
+            // find max view size
+            if (currentSequenceItemMaxSize > maxSequenceItemSize) {
+                maxSequenceItemSize = currentSequenceItemMaxSize;
+            }
 
             if (accumulatedSize + currentSequenceItemSize <= contextSize[offsetDirection]) {
+                offsetDirectionArray.push(accumulatedSize);
                 accumulatedSize += currentSequenceItemSize;
                 numSequenceItems += 1;
-
-                // last item in sequenceItems
-                if (i === sequenceItems.length - 1) {
-                    totalGutter = contextSize[offsetDirection] - accumulatedSize;
-                    gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
-                }
             } else {
                 totalGutter = contextSize[offsetDirection] - accumulatedSize;
-                gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
+                gutterInfo.push({
+                    "spaceBetween": (numSequenceItems === 1 ? 0 : Math.floor(totalGutter / (numSequenceItems - 1))),
+                    "numItems": numSequenceItems,
+                    "offsetDirectionArray": offsetDirectionArray,
+                    "maxDimension": maxSequenceItemSize
+                });
 
                 // reset
                 accumulatedSize = 0;
                 numSequenceItems = 0;
+                maxSequenceItemSize = 0;
+                offsetDirectionArray = [];
 
+                currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
+                currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
+
+                // find max view size
+                if (currentSequenceItemMaxSize > maxSequenceItemSize) {
+                    maxSequenceItemSize = currentSequenceItemMaxSize;
+                }
+
+                offsetDirectionArray.push(accumulatedSize);
                 accumulatedSize += currentSequenceItemSize;
                 numSequenceItems += 1;
             }
         }
 
-        return gutterInfo; // [[total gutter / number of items, number of items]] => one inner array for each row
+        // fill in remaining items
+        // accumulatedSize = 0;
+        // numSequenceItems = 0;
+        // maxSequenceItemSize = 0;
+        // offsetDirectionArray = [];
+
+        // for (var j = gutterInfo[0].numItems * gutterInfo.length; j < sequenceItems.length; j += 1) {
+        //     sequenceItem = sequenceItems[j];
+        //     // console.log(sequenceItem);
+        //     currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
+        //     // console.log(currentSequenceItemSize);
+        //     currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
+        //     // console.log(currentSequenceItemMaxSize);
+
+        //     // find max view size
+        //     if (currentSequenceItemMaxSize > maxSequenceItemSize) {
+        //         maxSequenceItemSize = currentSequenceItemMaxSize;
+        //     }
+
+        //     offsetDirectionArray.push(accumulatedSize);
+        //     // console.log(offsetDirectionArray);
+        //     accumulatedSize += currentSequenceItemSize;
+        //     numSequenceItems += 1;
+        // }
+
+        // console.log(maxSequenceItemSize);
+        // accumulatedSize += currentSequenceItemSize;
+        totalGutter = contextSize[offsetDirection] - accumulatedSize;
+        gutterInfo.push({
+            "spaceBetween": (numSequenceItems === 1 ? 0 : Math.floor(totalGutter / (numSequenceItems - 1))),
+            "numItems": numSequenceItems,
+            "offsetDirectionArray": offsetDirectionArray,
+            "maxDimension": maxSequenceItemSize
+        });
+
+        return gutterInfo; // one inner object for each row
+    }
+
+    function _calculateStartingPosition (obj) {
+        // obj -> {maxDimension: 100, numItems: 10, offsetDirectionArray: [ array of starting x or y positions ],spaceBetween: 20}
+        var startingPosition = [];
+        var position = 0;
+        for (var i = 0; i < obj.numItems; i += 1) {
+            // console.log(obj.offsetDirectionArray[i]);
+            position = obj.spaceBetween * i + obj.offsetDirectionArray[i];
+            console.log(position);
+            startingPosition.push(position);
+        }
+        return startingPosition;
     }
 
     function _sizeForDir(size) {

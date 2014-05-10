@@ -12,11 +12,15 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
+<<<<<<< HEAD
+        direction: Utility.Direction.X
+=======
         // direction: Utility.Direction.Y,
         // curve: Easing.inOutBounce,
         // duration: 200,
         // debounceTimer: 2000
         // gutter: false
+>>>>>>> 889596194d2e01987ee219a3a954421775500210
     });
 
     var logos = [];
