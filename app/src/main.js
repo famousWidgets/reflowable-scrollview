@@ -12,7 +12,7 @@ define(function(require, exports, module) {
 
     // your app here
     var reflowable = new ReflowableScrollview({
-        direction: Utility.Direction.X,
+        direction: Utility.Direction.Y,
         curve: Easing.outBounce,
         duration: 1000,
         debounceTimer: 250
