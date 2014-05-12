@@ -49,7 +49,6 @@ define(function(require, exports, module) {
       This is because Scrollview lays out its renderables using a ViewSequence (like a linked-list), 
       so a new ViewSequence has to be constructed each time there is a resizing event. 
      * @private
-??   * @method commit 
      * @param {Context} context commit context
     */
     function _customCommit(context) {
@@ -67,6 +66,25 @@ define(function(require, exports, module) {
             _scroller._contextSize[0] = size[0];
             _scroller._contextSize[1] = size[1];
 
+            // begin custom code extending scroller's commit function
+            this._previousTranslationObject = this._currentTranslationObject;
+
+
+            // new view sequence gets generated upon resizing event
+            if (!this.debounceFlag && this._timer) {
+                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence, this.options.debounceTimer);
+                _timeDebouncedCreateNewViewSequence.call(this, context);
+                this._timer = false;
+            }
+            
+            // first time execution of this reflowable scroll view, the following gets run only once
+            if (this.debounceFlag) {
+                initTransitionables.call(this); // initialize an array of TransitionableTransforms
+                _createNewViewSequence.call(this, context);
+                this.debounceFlag = false;
+            }
+            // end custom code
+
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
                 _scroller._size[1] = undefined;
@@ -76,23 +94,6 @@ define(function(require, exports, module) {
                 _scroller._size[1] = _getClipSize.call(_scroller);
             }
 
-            // begin custom code extending scroller's commit function
-            this._previousTranslationObject = this._currentTranslationObject;
-
-            // first time execution of this reflowable scroll view, the following gets run only once
-            if (this.debounceFlag) {
-                initTransitionables.call(this); // initialize an array of TransitionableTransforms
-                _createNewViewSequence.call(this, context);
-                this.debounceFlag = false;
-            }
-
-            // new view sequence gets generated upon resizing event
-            if (!this.debounceFlag && this._timer) {
-                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence, this.options.debounceTimer);
-                _timeDebouncedCreateNewViewSequence.call(this, context);
-                this._timer = false;
-            }
-            // end custom code
         }
 
         var scrollTransform = _scroller._masterOutputFunction(-_scroller._position);
@@ -108,7 +109,8 @@ define(function(require, exports, module) {
     /*
     * Creates one transitionableTransform for every view or surface that is 
     passed in via ReflowableScrollview's sequenceFrom method, and is accessible in 
-    this._transitionableArray. 
+    this._transitionableArray.
+    @private
     */
     function initTransitionables () {
         this._transitionableArray = [];
@@ -119,6 +121,15 @@ define(function(require, exports, module) {
 
     /*
 
+    Intercepts the array of renderables that gets passed in by the user and 
+    creates a new ViewSequence to pass to Scrollview's sequenceFrom method.
+
+    New viewSequence nodes are composed of new views with positions based on 
+    whether a user decides to include gutters or not.
+
+    Associated transitionableTransforms are also reset and set to animate to new positions.
+    * @private
+    * @param {Context} context commit context
     */
     function _createNewViewSequence(context) {
         // 'this' will be an instance of reflowableScrollview
@@ -126,14 +137,16 @@ define(function(require, exports, module) {
 
         var direction = this.options.direction;
         var offsetDirection = (direction === 0 ? 1 : 0);
-        var contextSize = context.size; // this is an array
+        var contextSize = context.size;
         var result = [];
+
+        // helper object for calculating offset for each new view 
+        var currentView = new View();
         var accumulate = {};
         accumulate.accumulatedSize = 0;
         accumulate.rowNumber = 0;
         accumulate.rowNumberCounter = 1;
 
-        var currentView = new View();
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
@@ -163,25 +176,28 @@ define(function(require, exports, module) {
                 // collect xyCoordinates of each item
                 xyCoordinates.push([accumulatedSizeWithGutter]);
 
+                // create new views within reflowable where each view corresponds to a row or column
                 _addToView.call(this, currentView, accumulatedSizeWithGutter, sequenceItem, j);
+
                 accumulate.accumulatedSize += currentSequenceItemSize;
             } else {
-                // result array is populated enough
+
+                // at this point, no more renderables can be added to the currentView without overflowing
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
 
                 // add max view size to each xyCoordinates subarray
                 _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, accumulate.rowNumber, translationObject);
 
-                // reset
-                accumulate.rowNumber += 1; // make sure we're increasing accumulate.rowNumber so that we're grabbing correct info from gutterInfo
+                // reset configurations for each new view in the viewSequence
+                accumulate.rowNumber += 1;
                 accumulate.rowNumberCounter = 1;
                 accumulate.accumulatedSize = 0;
                 maxSequenceItemSize = 0;
                 currentView = new View();
                 xyCoordinates = [];
 
-                // for first item in each row:
+                // the current sequenceItem is part of the next view:
                 currentSequenceItemMaxSize = sequenceItem.getSize()[direction];
 
                 if (currentSequenceItemMaxSize > maxSequenceItemSize) {
@@ -193,7 +209,7 @@ define(function(require, exports, module) {
                 accumulate.accumulatedSize += currentSequenceItemSize;
             }
 
-            // remnant items in currentView
+            // for the last view in the viewSequence, there may be less items than the other views
             if (j === this._originalArray.length - 1) {
                 currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
                 result.push(currentView);
@@ -201,18 +217,20 @@ define(function(require, exports, module) {
             }
         }
 
-        // console.log('translationObject ', translationObject);
         this._currentTranslationObject = translationObject;
 
+        // transitionableTransform animations are reset, and animated to new positions relative to their previous positions
         setTransitionables.call(this, this._currentTranslationObject, this._previousTranslationObject, this._transitionableArray);
 
         this.sequenceFrom.call(this, result);
         this._timer = true;
-        // return result;
     }
 
     /*
-
+    Helper function to for adding gutter offsets to each sequenceItem in the view
+    @private
+    @param {Object} helper object for calculating offset for each new view
+    @return {Number} the offset for each sequenceItem with or without gutter
     */
     function _gutter (accumulate) {
         if (accumulate.accumulatedSize === 0) {
@@ -220,13 +238,19 @@ define(function(require, exports, module) {
         } else if (this.options.gutter) {
             var t = accumulate.rowNumberCounter === gutterInfo[accumulate.rowNumber][1] ? accumulate.rowNumberCounter : accumulate.rowNumberCounter++;
             return accumulate.accumulatedSize + gutterInfo[accumulate.rowNumber][0] * t;
-            // want to include number of gutters proportional to the number of items in a row
-            // accumulatedSizeWithGutter = this.options.gutter ? accumulatedSizeWithGutter = accumulate.accumulatedSize + gutterInfo[accumulate.rowNumber][0] * (accumulate.rowNumberCounter === gutterInfo[accumulate.rowNumber][1] ? accumulate.rowNumberCounter : accumulate.rowNumberCounter++): accumulate.accumulatedSize;
-
         } else {
             return accumulate.accumulatedSize;
         }
     }
+    /*
+      Helper function for populating xyCoordinates with information about each view, 
+      including the view's position and the index of the view within the viewSequence
+      @private
+      @param {Array}  An array of arrays where each inner array has the accumulated size with gutter
+      @param {Number} the largest dimension for this view (used for offset in scroller.innerRender)
+      @param {Number} the index of the view within the viewSequence
+      @param {Array}  the translationObject accumulates current positions and current rows, which gets used by setTransitionables() 
+    */
 
     function _createXYCoordinates (xyCoordinates, maxSequenceItemSize, rowNumber, translationObject) {
         var direction = this.options.direction;
@@ -234,65 +258,58 @@ define(function(require, exports, module) {
             var element = {};
             element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
             element['row'] = rowNumber;
-            // element['transitionable'] = new TransitionableTransform();
             translationObject.push(element);
         }.bind(this));
     }
 
-    // sets each transitionableTransform in the this._transitionableArray to original position, and animate back to new position
-    // returns the newly set transitionable array. This is called once per resizing. 
+    /*
+        This function is called once per resizing, and sets each transitionableTransform in the this._transitionableArray to the previous position, 
+        and animate back to new position
+        returns the newly set transitionable array. This is called once per resizing.
+        @param {Array} currTranslationObj An array of objects which contain current position and row information for each of the original renderables
+        @param {Array} prevTranslationObj An array of objects which contain previous position and row information for each of the original renderables
+        @param {Array} transitionableArray An array of transitionableTransforms for each of the original renderables 
+        @return {Array} transitionableArray An array of transitionableTransforms for each of the original renderables
+    */
     function setTransitionables (currTranslationObj, prevTranslationObj, transitionableArray) {
         var defaultPrev = {position: [0,0, this.options.defaultZ], row: 0}
 
         for (var i = 0; i < currTranslationObj.length; i += 1) {
-            // the FIRST TIME this runs, this._previousTranslationObject array will be of length 0; elements undefined. 
             var prevObj = prevTranslationObj[i] || defaultPrev;
             
             this._result[i] = _getPreviousPosition.call(this, prevObj, currTranslationObj[i]);
 
             // reset
             transitionableArray[i].halt();
-            transitionableArray[i].set(this._result[i]);
-            // if (i === 3 ) {
-            //     i === 3 ? console.log('isActive') : '';
-            //     transitionableArray[i].halt();
-            //     // 
-            //     transitionableArray[i].set(Transform.translate(100, 0, 1), {duration: 1000});
-            //     transitionableArray[i].set(Transform.translate(100, 100, 1), {duration: 1000});
-            //     transitionableArray[i].set(Transform.translate(0, 100, 1), {duration: 1000});
-            //     transitionableArray[i].set(Transform.translate(0, 0, 1), {duration: 1000});
-
-            // } else {
-            //     transitionableArray[i].set(this._result[i]);
-            // }
-            // transitionableArray[i].set(Transform.identity);
 
             // go to prev
+            transitionableArray[i].set(this._result[i]);
 
             // animate back to current
             transitionableArray[i].set(Transform.identity, {duration: this.options.duration, curve: this.options.curve});
-
-            // // console log of 3
-            i === 3 ? window.prev = prevObj : '';
-            i === 3 ? window.curr = currTranslationObj[i] : '';
-            i === 3 ? window.res = this._result[i] : '';
-            i === 3 ? console.log(window.prev.position, window.curr.position, res, transitionableArray[i].get()) : '';
         }
 
         return transitionableArray;
     }
 
     function _addToView(view, offset, sequenceItem, idx) {
-        // var transitionable;
         var modifier = new Modifier({
-            transform: function () { return _customFunction.call(this, offset, idx) }.bind(this)
+            transform: function () { return _transformToNew.call(this, offset, idx) }.bind(this)
         });
         view.add(modifier).add(sequenceItem);
     }
 
-    function _customFunction(offset, idx) {
+    /*
+    Returns a transformation matrix that represents a slice of the transitionableTransform 
+    moving towards the current position from the previous position
+    @param {Number} offset Amount of translation in the x and y direction for each renderable
+    @param {Number} idx The current renderable to apply translations to
+    @return {Transform} a transformation matrix 
+    */
+    function _transformToNew(offset, idx) {
         var direction = this.options.direction;
         var offsetDirection = direction === 0 ? 1 : 0;
+
         var vector = [0, 0, 0];
         vector[offsetDirection] = offset; 
         var off = Transform.translate.apply(null, vector);
@@ -301,19 +318,14 @@ define(function(require, exports, module) {
 
         return orig;
     }
-     // * @param {Object} [options] default option overrides
-     // * @param {Array.Number} [options.size] [width, height] in pixels
-     // * @param {Array.string} [options.classes] CSS classes to set on inner content
-     // * @param {Array} [options.properties] string dictionary of HTML attributes to set on target div
-     // * @param {string} [options.content] inner (HTML) content of surface
 
     /*
-      _getPreviousPosition 
+      helper function to return a transformation matrix representing the previous position 
 
-      @param {Object} []
-      @param {Object}
-      @return {Transform} the result matrix to get back to the previous position
+      @param {Object} previousObj has two properties: position and row. position is a translation vector [x, y, z], row is the index of the current view in the viewSequence 
+      @param {Object} currentObj has two properties: position and row. position is a translation vector [x, y, z], row is the index of the current view in the viewSequence 
 
+      @return {Transform} the result transformation matrix to get back to the previous position
     */
     function _getPreviousPosition(previousObj, currentObj) {
         var direction = this.options.direction;
@@ -321,9 +333,6 @@ define(function(require, exports, module) {
 
         var positionTransform = Transform.identity;
         var rowTransform = Transform.identity;
-
-        // element['position'] = [array[0],maxSequenceItemSize] OR [maxSequenceItemSize, array[0]];
-        // element['row'] = accumulate.rowNumber;
 
         var currentPosition = currentObj.position[offsetDirection];
         var previousPosition = previousObj.position[offsetDirection];
@@ -355,6 +364,11 @@ define(function(require, exports, module) {
 
         return Transform.multiply(positionTransform, rowTransform);
     }
+
+    /*
+
+
+    */
 
     function _calculateGutterInfo(sequenceItems, direction, contextSize) {
         // 'this' will be an instance of reflowableScrollview
