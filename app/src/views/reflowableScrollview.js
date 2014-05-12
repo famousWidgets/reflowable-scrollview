@@ -43,8 +43,17 @@ define(function(require, exports, module) {
         defaultZ: 0
     };
 
+    /*
+      _customCommit inherits most of its logic and code from Scroller's commit method, but allows
+      us to intercept and replace the original viewSequence before .render() is called.
+      This is because Scrollview lays out its renderables using a ViewSequence (like a linked-list), 
+      so a new ViewSequence has to be constructed each time there is a resizing event. 
+     * @private
+??   * @method commit 
+     * @param {Context} context commit context
+    */
     function _customCommit(context) {
-        // 'this' will be an instance of reflowableScrollview
+        // To avoid mixing context, 'this' will always be an instance of reflowableScrollview
         var _scroller = this._scroller;
 
         var transform = context.transform;
@@ -53,26 +62,10 @@ define(function(require, exports, module) {
         var size = context.size;
 
         // reset edge detection on size change
-        // Implemented bug fix here
         if (!_scroller.options.clipSize && (size[0] !== _scroller._contextSize[0] || size[1] !== _scroller._contextSize[1])) {
             _scroller._onEdge = 0;
             _scroller._contextSize[0] = size[0];
             _scroller._contextSize[1] = size[1];
-
-            this._previousTranslationObject = this._currentTranslationObject;
-
-            if (!this.debounceFlag && this._timer) {
-                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence, this.options.debounceTimer);
-                _timeDebouncedCreateNewViewSequence.call(this, context);
-                this._timer = false;
-            }
-
-            // first time execution of this reflowable scroll view, the following gets run only once
-            if (this.debounceFlag) {
-                initTransitionables.call(this); // initialize array of transitionables
-                _createNewViewSequence.call(this, context);
-                this.debounceFlag = false;
-            }
 
             if (_scroller.options.direction === Utility.Direction.X) {
                 _scroller._size[0] = _getClipSize.call(_scroller);
@@ -82,6 +75,24 @@ define(function(require, exports, module) {
                 _scroller._size[0] = undefined;
                 _scroller._size[1] = _getClipSize.call(_scroller);
             }
+
+            // begin custom code extending scroller's commit function
+            this._previousTranslationObject = this._currentTranslationObject;
+
+            // first time execution of this reflowable scroll view, the following gets run only once
+            if (this.debounceFlag) {
+                initTransitionables.call(this); // initialize an array of TransitionableTransforms
+                _createNewViewSequence.call(this, context);
+                this.debounceFlag = false;
+            }
+
+            // new view sequence gets generated upon resizing event
+            if (!this.debounceFlag && this._timer) {
+                var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence, this.options.debounceTimer);
+                _timeDebouncedCreateNewViewSequence.call(this, context);
+                this._timer = false;
+            }
+            // end custom code
         }
 
         var scrollTransform = _scroller._masterOutputFunction(-_scroller._position);
@@ -94,15 +105,21 @@ define(function(require, exports, module) {
         };
     }
 
+    /*
+    * Creates one transitionableTransform for every view or surface that is 
+    passed in via ReflowableScrollview's sequenceFrom method, and is accessible in 
+    this._transitionableArray. 
+    */
     function initTransitionables () {
         this._transitionableArray = [];
         for (var i = 0; i < this._node._.array.length; i += 1) {
             this._transitionableArray.push(new TransitionableTransform());
         }
-        // greg testing, remove later //
-        window.tt = this._transitionableArray;
     }
 
+    /*
+
+    */
     function _createNewViewSequence(context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
@@ -194,6 +211,9 @@ define(function(require, exports, module) {
         // return result;
     }
 
+    /*
+
+    */
     function _gutter (accumulate) {
         if (accumulate.accumulatedSize === 0) {
             return accumulate.accumulatedSize;
@@ -281,8 +301,20 @@ define(function(require, exports, module) {
 
         return orig;
     }
+     // * @param {Object} [options] default option overrides
+     // * @param {Array.Number} [options.size] [width, height] in pixels
+     // * @param {Array.string} [options.classes] CSS classes to set on inner content
+     // * @param {Array} [options.properties] string dictionary of HTML attributes to set on target div
+     // * @param {string} [options.content] inner (HTML) content of surface
 
-    // _getPreviousPosition.call(this, previousObj, currentObj) - where 'this' is an instance of reflowable scrollview
+    /*
+      _getPreviousPosition 
+
+      @param {Object} []
+      @param {Object}
+      @return {Transform} the result matrix to get back to the previous position
+
+    */
     function _getPreviousPosition(previousObj, currentObj) {
         var direction = this.options.direction;
         var offsetDirection = (direction === 0 ? 1 : 0);
@@ -293,7 +325,6 @@ define(function(require, exports, module) {
         // element['position'] = [array[0],maxSequenceItemSize] OR [maxSequenceItemSize, array[0]];
         // element['row'] = accumulate.rowNumber;
 
-        // if scrolling along Y:
         var currentPosition = currentObj.position[offsetDirection];
         var previousPosition = previousObj.position[offsetDirection];
         var currentMax = currentObj.position[direction];
