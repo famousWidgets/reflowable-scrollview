@@ -366,13 +366,17 @@ define(function(require, exports, module) {
     }
 
     /*
+    Helper function to return an array of arrays where each inner array contains 2 elements.
+    The first element represents the total gutter size in between each sequenceItem for a particular view.
+    The second element reprsents the total number of sequenceItems for a particular view.   
 
-
+    @param {Array} sequenceItems represents a collection of renderables that the user passes in
+    @param {Number} direction X or Y scrolling
+    @param {Array} contextSize An array representing the width and height of window
+    @return {Array} returns an array of arrays
     */
-
     function _calculateGutterInfo(sequenceItems, direction, contextSize) {
         // 'this' will be an instance of reflowableScrollview
-        // _calculateGetter.call(this, this._originalArray, direction)
 
         var offsetDirection = (direction === 0 ? 1 : 0);
         var accumulatedSize = 0;
@@ -382,7 +386,6 @@ define(function(require, exports, module) {
         var sequenceItem;
         var currentSequenceItemSize;
 
-
         for (var i = 0; i < sequenceItems.length; i += 1) {
             sequenceItem = sequenceItems[i];
             currentSequenceItemSize = sequenceItem.getSize()[offsetDirection];
@@ -391,7 +394,7 @@ define(function(require, exports, module) {
                 accumulatedSize += currentSequenceItemSize;
                 numSequenceItems += 1;
 
-                // last item in sequenceItems
+                // for the last view in the viewSequence, there may be less items than the other views
                 if (i === sequenceItems.length - 1) {
                     totalGutter = contextSize[offsetDirection] - accumulatedSize;
                     gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
@@ -400,7 +403,7 @@ define(function(require, exports, module) {
                 totalGutter = contextSize[offsetDirection] - accumulatedSize;
                 gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
 
-                // reset
+                // reset configurations for each new view in the viewSequence
                 accumulatedSize = 0;
                 numSequenceItems = 0;
 
@@ -408,17 +411,18 @@ define(function(require, exports, module) {
                 numSequenceItems += 1;
             }
         }
-        window.g = gutterInfo;
 
-        return gutterInfo; // [[total gutter / number of items, number of items]] => one inner array for each row
+        return gutterInfo; // [[total gutter / (number of items - 1), number of items]] 
     }
 
+    // copied over from Scroller
     function _sizeForDir(size) {
         if (!size) size = this._contextSize;
         var dimension = (this.options.direction === Utility.Direction.X) ? 0 : 1;
         return (size[dimension] === undefined) ? this._contextSize[dimension] : size[dimension];
     }
 
+    // copied over from Scroller
     function _getClipSize() {
         if (this.options.clipSize) return this.options.clipSize;
         else return _sizeForDir.call(this, this._contextSize);
