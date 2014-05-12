@@ -27,7 +27,6 @@ define(function(require, exports, module) {
      * @param {Number} [debounceTimer=1000] amount of time delayed before triggering reflowable animation after resize
      * @param {Boolean} [gutter=false] whether a gutter should appear between each renderable
      */
-
     function reflowableScrollview (options) {
         ScrollView.apply(this, arguments);
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
@@ -177,7 +176,7 @@ define(function(require, exports, module) {
                 }
 
                 // first sequenceItem will be on the left / top most edge
-                accumulatedSizeWithGutter = _gutter.call(this, accumulate);
+                accumulatedSizeWithGutter = _gutter.call(this, accumulate, gutterInfo);
 
                 // collect xyCoordinates of each item
                 xyCoordinates.push([accumulatedSizeWithGutter]);
@@ -238,7 +237,7 @@ define(function(require, exports, module) {
      * @param {Object} helper object for calculating offset for each new view
      * @return {Number} the offset for each sequenceItem with or without gutter
      */
-    function _gutter (accumulate) {
+    function _gutter (accumulate, gutterInfo) {
         if (accumulate.accumulatedSize === 0) {
             return accumulate.accumulatedSize;
         } else if (this.options.gutter) {
