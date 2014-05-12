@@ -27,17 +27,16 @@ define(function(require, exports, module) {
      * @param {Number} [debounceTimer=1000] amount of time delayed before triggering reflowable animation after resize
      * @param {Boolean} [gutter=false] whether a gutter should appear between each renderable
      */
-
     function reflowableScrollview (options) {
         ScrollView.apply(this, arguments);
         this.setOptions(reflowableScrollview.DEFAULT_OPTIONS);
         this.setOptions(options);
 
-        this.debounceFlag = true;
         this._scroller.commit = _customCommit.bind(this);
         this._previousTranslationObject = [];
         this._currentTranslationObject = [];
         this._result = [];
+        this._debounceFlag = true;
         this._timer = true;
     }
 
@@ -78,19 +77,18 @@ define(function(require, exports, module) {
             // begin custom code extending scroller's commit function
             this._previousTranslationObject = this._currentTranslationObject;
 
-
             // new view sequence gets generated upon resizing event
-            if (!this.debounceFlag && this._timer) {
+            if (!this._debounceFlag && this._timer) {
                 var _timeDebouncedCreateNewViewSequence = Timer.debounce(_createNewViewSequence, this.options.debounceTimer);
                 _timeDebouncedCreateNewViewSequence.call(this, context);
                 this._timer = false;
             }
-            
+
             // first time execution of this reflowable scroll view, the following gets run only once
-            if (this.debounceFlag) {
-                initTransitionables.call(this); // initialize an array of TransitionableTransforms
+            if (this._debounceFlag) {
+                _initTransitionables.call(this); // initialize an array of TransitionableTransforms
                 _createNewViewSequence.call(this, context);
-                this.debounceFlag = false;
+                this._debounceFlag = false;
             }
             // end custom code
 
@@ -121,7 +119,7 @@ define(function(require, exports, module) {
      * this._transitionableArray.
      * @private
      */
-    function initTransitionables () {
+    function _initTransitionables () {
         this._transitionableArray = [];
         for (var i = 0; i < this._node._.array.length; i += 1) {
             this._transitionableArray.push(new TransitionableTransform());
@@ -155,6 +153,7 @@ define(function(require, exports, module) {
 
         var maxSequenceItemSize = 0;
         var numSequenceItems = 0;
+        
         var gutterInfo = _calculateGutterInfo.call(null, this._originalArray, direction, contextSize);
         var accumulatedSizeWithGutter;
         var sequenceItem;
@@ -177,7 +176,7 @@ define(function(require, exports, module) {
                 }
 
                 // first sequenceItem will be on the left / top most edge
-                accumulatedSizeWithGutter = _gutter.call(this, accumulate);
+                accumulatedSizeWithGutter = _gutter.call(this, accumulate, gutterInfo);
 
                 // collect xyCoordinates of each item
                 xyCoordinates.push([accumulatedSizeWithGutter]);
@@ -238,7 +237,7 @@ define(function(require, exports, module) {
      * @param {Object} helper object for calculating offset for each new view
      * @return {Number} the offset for each sequenceItem with or without gutter
      */
-    function _gutter (accumulate) {
+    function _gutter (accumulate, gutterInfo) {
         if (accumulate.accumulatedSize === 0) {
             return accumulate.accumulatedSize;
         } else if (this.options.gutter) {
@@ -262,8 +261,8 @@ define(function(require, exports, module) {
         var direction = this.options.direction;
         xyCoordinates.forEach(function(array) {
             var element = {};
-            element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
-            element['row'] = rowNumber;
+            element.position = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
+            element.row = rowNumber;
             translationObject.push(element);
         }.bind(this));
     }
@@ -278,7 +277,7 @@ define(function(require, exports, module) {
      * @return {Array} transitionableArray An array of transitionableTransforms for each of the original renderables
      */
     function setTransitionables (currTranslationObj, prevTranslationObj, transitionableArray) {
-        var defaultPrev = {position: [0,0], row: 0}
+        var defaultPrev = {position: [0,0], row: 0};
 
         for (var i = 0; i < currTranslationObj.length; i += 1) {
             var prevObj = prevTranslationObj[i] || defaultPrev;
@@ -300,7 +299,7 @@ define(function(require, exports, module) {
 
     function _addToView(view, offset, sequenceItem, idx) {
         var modifier = new Modifier({
-            transform: function () { return _transformToNew.call(this, offset, idx) }.bind(this)
+            transform: function () { return _transformToNew.call(this, offset, idx); }.bind(this)
         });
         view.add(modifier).add(sequenceItem);
     }
@@ -332,6 +331,7 @@ define(function(require, exports, module) {
      * @return {Transform} the result transformation matrix to get back to the previous position
      */
     function _getPreviousPosition(previousObj, currentObj) {
+        // _getPreviousPosition.call(this, previousObj, currentObj) - where 'this' is an instance of reflowable scrollview
         var direction = this.options.direction;
         var offsetDirection = (direction === 0 ? 1 : 0);
 
@@ -402,14 +402,14 @@ define(function(require, exports, module) {
                     totalGutter = contextSize[offsetDirection] - accumulatedSize;
                     gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
                 }
-            } else {
+            } 
+            else {
                 totalGutter = contextSize[offsetDirection] - accumulatedSize;
                 gutterInfo.push( [Math.floor(totalGutter / (numSequenceItems - 1)), numSequenceItems] );
 
                 // reset configurations for each new view in the viewSequence
                 accumulatedSize = 0;
                 numSequenceItems = 0;
-
                 accumulatedSize += currentSequenceItemSize;
                 numSequenceItems += 1;
             }
