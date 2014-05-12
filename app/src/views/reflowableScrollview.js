@@ -12,10 +12,20 @@ define(function(require, exports, module) {
     var TransitionableTransform = require('famous/transitions/TransitionableTransform');
     var Easing = require('famous/transitions/Easing');
 
-    /*
+    /**
+     * ReflowableScrollview extends Scrollview and adds functionality that 
+     *   reflows the renderables on screen whenever there is a resize event
      * @name reflowableScrollview
      * @constructor
-     * @description
+     * @param {Options} [options] An object of configurable options
+     * @param {Number} [options.direction=Utility.Direction.Y] Using the direction helper found in the famous Utility
+     * module, this option will lay out the Scrollview instance's renderables either horizontally
+     * (x) or vertically (y). Utility's direction is essentially either zero (X) or one (Y), so feel free
+     * to just use integers as well.
+     * @param {Number} [duration=1000] represents length of time for reflowable animation
+     * @param {String} [curve='linear'] easing curve for the reflowable animation 
+     * @param {Number} [debounceTimer=1000] amount of time delayed before triggering reflowable animation after resize
+     * @param {Boolean} [gutter=false] whether a gutter should appear between each renderable
      */
 
     function reflowableScrollview (options) {
@@ -39,8 +49,7 @@ define(function(require, exports, module) {
         duration: 1000,
         curve: 'linear',
         debounceTimer: 1000,
-        gutter: false,
-        defaultZ: 0
+        gutter: false
     };
 
     /*
@@ -183,7 +192,7 @@ define(function(require, exports, module) {
             } else {
 
                 // at this point, no more renderables can be added to the currentView without overflowing
-                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
 
                 // add max view size to each xyCoordinates subarray
@@ -211,7 +220,7 @@ define(function(require, exports, module) {
 
             // for the last view in the viewSequence, there may be less items than the other views
             if (j === this._originalArray.length - 1) {
-                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize, this.options.defaultZ] : [maxSequenceItemSize, undefined, this.options.defaultZ] });
+                currentView.setOptions({ size: direction === 1 ? [undefined, maxSequenceItemSize] : [maxSequenceItemSize, undefined] });
                 result.push(currentView);
                 _createXYCoordinates.call(this, xyCoordinates, maxSequenceItemSize, accumulate.rowNumber, translationObject);
             }
@@ -256,7 +265,7 @@ define(function(require, exports, module) {
         var direction = this.options.direction;
         xyCoordinates.forEach(function(array) {
             var element = {};
-            element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize, this.options.defaultZ]: [maxSequenceItemSize, array[0], this.options.defaultZ]);
+            element['position'] = (direction === 1 ? [array[0],maxSequenceItemSize]: [maxSequenceItemSize, array[0]]);
             element['row'] = rowNumber;
             translationObject.push(element);
         }.bind(this));
@@ -272,7 +281,7 @@ define(function(require, exports, module) {
         @return {Array} transitionableArray An array of transitionableTransforms for each of the original renderables
     */
     function setTransitionables (currTranslationObj, prevTranslationObj, transitionableArray) {
-        var defaultPrev = {position: [0,0, this.options.defaultZ], row: 0}
+        var defaultPrev = {position: [0,0], row: 0}
 
         for (var i = 0; i < currTranslationObj.length; i += 1) {
             var prevObj = prevTranslationObj[i] || defaultPrev;

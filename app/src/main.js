@@ -15,7 +15,8 @@ define(function(require, exports, module) {
         direction: Utility.Direction.Y,
         curve: Easing.outBounce,
         duration: 1000,
-        debounceTimer: 250
+        debounceTimer: 250,
+        defaultZ: 1000
         // gutter: false
     });
 
