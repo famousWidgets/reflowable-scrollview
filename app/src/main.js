@@ -15,7 +15,8 @@ define(function(require, exports, module) {
         direction: Utility.Direction.Y,
         curve: Easing.outBounce,
         duration: 1000,
-        debounceTimer: 250
+        debounceTimer: 250,
+        defaultZ: 1000
         // gutter: false
     });
 
@@ -29,30 +30,30 @@ define(function(require, exports, module) {
     var xScale = 1; // 1920/1400;
     var yScale = 1; // 1080/800;
 
-    for (var i = 0; i < 10; i += 1) {
-        for (var j = 0; j < 10; j+=1) {
-            var starryNight = new ImageSurface({
-                size: [100 * xScale, 100 * yScale],
-                content: '/content/images/starrynight/starry-night-2d-3d [www.imagesplitter.net]-' + i +'-' + j +'.png',
-                classes: ['backfaceVisibility']
-            });
-            sizeCounter++;
-            reflowable.subscribe(starryNight);
-            pics.push(starryNight);
-        }
+    for (var i = 0; i < num; i += 1) {
+        // for (var j = 0; j < 10; j+=1) {
+        //     var starryNight = new ImageSurface({
+        //         size: [100 * xScale, 100 * yScale],
+        //         content: '/content/images/starrynight/starry-night-2d-3d [www.imagesplitter.net]-' + i +'-' + j +'.png',
+        //         classes: ['backfaceVisibility']
+        //     });
+        //     sizeCounter++;
+        //     reflowable.subscribe(starryNight);
+        //     pics.push(starryNight);
+        // }
 
-        // var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
+        var color = "hsl(" + (i * 360 / 10) + ", 100%, 50%)";
 
-        // var surface = new Surface({
-        //     size: [100, 100],
-        //     // size: [50 * (sizeCounter % 2 + 1), 50 * (sizeCounter % 4 + 1)],
-        //     content:  ''+i,
-        //     properties: {
-        //         backgroundColor: color
-        //     }
-        // });
-        // reflowable.subscribe(surface);
-        // pics.push(surface);
+        var surface = new Surface({
+            size: [100, 100],
+            // size: [50 * (sizeCounter % 2 + 1), 50 * (sizeCounter % 4 + 1)],
+            content:  ''+i,
+            properties: {
+                backgroundColor: color
+            }
+        });
+        reflowable.subscribe(surface);
+        pics.push(surface);
     }
 
     var mainContext = Engine.createContext();
