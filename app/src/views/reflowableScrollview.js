@@ -52,14 +52,14 @@ define(function(require, exports, module) {
         gutter: false
     };
 
-    /*
-      _customCommit inherits most of its logic and code from Scroller's commit method, but allows
-      us to intercept and replace the original viewSequence before .render() is called.
-      This is because Scrollview lays out its renderables using a ViewSequence (like a linked-list), 
-      so a new ViewSequence has to be constructed each time there is a resizing event. 
+    /**
+     * _customCommit inherits most of its logic and code from Scroller's commit method, but allows
+     * us to intercept and replace the original viewSequence before .render() is called.
+     * This is because Scrollview lays out its renderables using a ViewSequence (like a linked-list), 
+     * so a new ViewSequence has to be constructed each time there is a resizing event. 
      * @private
      * @param {Context} context commit context
-    */
+     */
     function _customCommit(context) {
         // To avoid mixing context, 'this' will always be an instance of reflowableScrollview
         var _scroller = this._scroller;
@@ -115,12 +115,12 @@ define(function(require, exports, module) {
         };
     }
 
-    /*
-    * Creates one transitionableTransform for every view or surface that is 
-    passed in via ReflowableScrollview's sequenceFrom method, and is accessible in 
-    this._transitionableArray.
-    @private
-    */
+    /**
+     * Creates one transitionableTransform for every view or surface that is 
+     * passed in via ReflowableScrollview's sequenceFrom method, and is accessible in 
+     * this._transitionableArray.
+     * @private
+     */
     function initTransitionables () {
         this._transitionableArray = [];
         for (var i = 0; i < this._node._.array.length; i += 1) {
@@ -128,18 +128,15 @@ define(function(require, exports, module) {
         }
     }
 
-    /*
-
-    Intercepts the array of renderables that gets passed in by the user and 
-    creates a new ViewSequence to pass to Scrollview's sequenceFrom method.
-
-    New viewSequence nodes are composed of new views with positions based on 
-    whether a user decides to include gutters or not.
-
-    Associated transitionableTransforms are also reset and set to animate to new positions.
-    * @private
-    * @param {Context} context commit context
-    */
+    /**
+     * Intercepts the array of renderables that gets passed in by the user and 
+     * creates a new ViewSequence to pass to Scrollview's sequenceFrom method.
+     * New viewSequence nodes are composed of new views with positions based on 
+     * whether a user decides to include gutters or not.
+     * Associated transitionableTransforms are also reset and set to animate to new positions.
+     * @private
+     * @param {Context} context commit context
+     */
     function _createNewViewSequence(context) {
         // 'this' will be an instance of reflowableScrollview
         this._originalArray = this._originalArray || this._node._.array;
@@ -235,12 +232,12 @@ define(function(require, exports, module) {
         this._timer = true;
     }
 
-    /*
-    Helper function to for adding gutter offsets to each sequenceItem in the view
-    @private
-    @param {Object} helper object for calculating offset for each new view
-    @return {Number} the offset for each sequenceItem with or without gutter
-    */
+    /**
+     * Helper function to for adding gutter offsets to each sequenceItem in the view
+     * @private
+     * @param {Object} helper object for calculating offset for each new view
+     * @return {Number} the offset for each sequenceItem with or without gutter
+     */
     function _gutter (accumulate) {
         if (accumulate.accumulatedSize === 0) {
             return accumulate.accumulatedSize;
@@ -251,16 +248,16 @@ define(function(require, exports, module) {
             return accumulate.accumulatedSize;
         }
     }
-    /*
-      Helper function for populating xyCoordinates with information about each view, 
-      including the view's position and the index of the view within the viewSequence
-      @private
-      @param {Array}  An array of arrays where each inner array has the accumulated size with gutter
-      @param {Number} the largest dimension for this view (used for offset in scroller.innerRender)
-      @param {Number} the index of the view within the viewSequence
-      @param {Array}  the translationObject accumulates current positions and current rows, which gets used by setTransitionables() 
-    */
 
+    /**
+     * Helper function for populating xyCoordinates with information about each view, 
+     * including the view's position and the index of the view within the viewSequence
+     * @private
+     * @param {Array}  An array of arrays where each inner array has the accumulated size with gutter
+     * @param {Number} the largest dimension for this view (used for offset in scroller.innerRender)
+     * @param {Number} the index of the view within the viewSequence
+     * @param {Array}  the translationObject accumulates current positions and current rows, which gets used by setTransitionables() 
+     */
     function _createXYCoordinates (xyCoordinates, maxSequenceItemSize, rowNumber, translationObject) {
         var direction = this.options.direction;
         xyCoordinates.forEach(function(array) {
@@ -271,15 +268,15 @@ define(function(require, exports, module) {
         }.bind(this));
     }
 
-    /*
-        This function is called once per resizing, and sets each transitionableTransform in the this._transitionableArray to the previous position, 
-        and animate back to new position
-        returns the newly set transitionable array. This is called once per resizing.
-        @param {Array} currTranslationObj An array of objects which contain current position and row information for each of the original renderables
-        @param {Array} prevTranslationObj An array of objects which contain previous position and row information for each of the original renderables
-        @param {Array} transitionableArray An array of transitionableTransforms for each of the original renderables 
-        @return {Array} transitionableArray An array of transitionableTransforms for each of the original renderables
-    */
+    /**
+     * This function is called once per resizing, and sets each transitionableTransform in the this._transitionableArray to the previous position, 
+     * and animate back to new position
+     * returns the newly set transitionable array. This is called once per resizing.
+     * @param {Array} currTranslationObj An array of objects which contain current position and row information for each of the original renderables
+     * @param {Array} prevTranslationObj An array of objects which contain previous position and row information for each of the original renderables
+     * @param {Array} transitionableArray An array of transitionableTransforms for each of the original renderables 
+     * @return {Array} transitionableArray An array of transitionableTransforms for each of the original renderables
+     */
     function setTransitionables (currTranslationObj, prevTranslationObj, transitionableArray) {
         var defaultPrev = {position: [0,0], row: 0}
 
@@ -308,13 +305,13 @@ define(function(require, exports, module) {
         view.add(modifier).add(sequenceItem);
     }
 
-    /*
-    Returns a transformation matrix that represents a slice of the transitionableTransform 
-    moving towards the current position from the previous position
-    @param {Number} offset Amount of translation in the x and y direction for each renderable
-    @param {Number} idx The current renderable to apply translations to
-    @return {Transform} a transformation matrix 
-    */
+    /**
+     * Returns a transformation matrix that represents a slice of the transitionableTransform 
+     * moving towards the current position from the previous position
+     * @param {Number} offset Amount of translation in the x and y direction for each renderable
+     * @param {Number} idx The current renderable to apply translations to
+     * @return {Transform} a transformation matrix 
+     */
     function _transformToNew(offset, idx) {
         var direction = this.options.direction;
         var offsetDirection = direction === 0 ? 1 : 0;
@@ -328,14 +325,12 @@ define(function(require, exports, module) {
         return orig;
     }
 
-    /*
-      helper function to return a transformation matrix representing the previous position 
-
-      @param {Object} previousObj has two properties: position and row. position is a translation vector [x, y, z], row is the index of the current view in the viewSequence 
-      @param {Object} currentObj has two properties: position and row. position is a translation vector [x, y, z], row is the index of the current view in the viewSequence 
-
-      @return {Transform} the result transformation matrix to get back to the previous position
-    */
+    /**
+     * Helper function to return a transformation matrix representing the previous position 
+     * @param {Object} previousObj has two properties: position and row. position is a translation vector [x, y, z], row is the index of the current view in the viewSequence 
+     * @param {Object} currentObj has two properties: position and row. position is a translation vector [x, y, z], row is the index of the current view in the viewSequence 
+     * @return {Transform} the result transformation matrix to get back to the previous position
+     */
     function _getPreviousPosition(previousObj, currentObj) {
         var direction = this.options.direction;
         var offsetDirection = (direction === 0 ? 1 : 0);
@@ -374,16 +369,15 @@ define(function(require, exports, module) {
         return Transform.multiply(positionTransform, rowTransform);
     }
 
-    /*
-    Helper function to return an array of arrays where each inner array contains 2 elements.
-    The first element represents the total gutter size in between each sequenceItem for a particular view.
-    The second element reprsents the total number of sequenceItems for a particular view.   
-
-    @param {Array} sequenceItems represents a collection of renderables that the user passes in
-    @param {Number} direction X or Y scrolling
-    @param {Array} contextSize An array representing the width and height of window
-    @return {Array} returns an array of arrays
-    */
+    /**
+     * Helper function to return an array of arrays where each inner array contains 2 elements.
+     * The first element represents the total gutter size in between each sequenceItem for a particular view.
+     * The second element reprsents the total number of sequenceItems for a particular view.
+     * @param {Array} sequenceItems represents a collection of renderables that the user passes in
+     * @param {Number} direction X or Y scrolling
+     * @param {Array} contextSize An array representing the width and height of window
+     * @return {Array} returns an array of arrays
+     */
     function _calculateGutterInfo(sequenceItems, direction, contextSize) {
         // 'this' will be an instance of reflowableScrollview
 
@@ -439,10 +433,3 @@ define(function(require, exports, module) {
 
     module.exports = reflowableScrollview;
 });
-
-/*
-
-  Animation bug: 
-  - IF resizing WHILE there's an animation resize, the items jump to end position, then moves to the new position. 
-
-*/
