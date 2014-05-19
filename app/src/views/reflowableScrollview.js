@@ -45,9 +45,9 @@ define(function(require, exports, module) {
 
     reflowableScrollview.DEFAULT_OPTIONS = {
         direction: Utility.Direction.Y,
-        duration: 1000,
-        curve: 'linear',
-        debounceTimer: 1000,
+        duration: 500,
+        curve: Easing.inOutCirc,
+        debounceTimer: 500,
         gutter: false
     };
 

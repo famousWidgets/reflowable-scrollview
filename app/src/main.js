@@ -14,7 +14,8 @@ define(function(require, exports, module) {
 
     // 1. Baseline - using defaults and same-sized colored surfaces
     var reflowable = new ReflowableScrollview({
-        debounceTimer: 1000
+        debounceTimer: 1000,
+        size: [500, 500]
     });
     var surfaces = [];
     var num = 100;
@@ -90,5 +91,6 @@ define(function(require, exports, module) {
 
     var mainContext = Engine.createContext();
     mainContext.add(reflowable);
+    // mainContext.add(reflowable);
 
 });
