@@ -19,9 +19,3 @@ app/lib
 # images #
 ##########
 app/content/images/pic
-
-# demo day #
-#############
-app/content/facebook.html
-app/content/facebookPics
-app/content/facebook_files
