@@ -23,7 +23,53 @@ define(function(require, exports, module) {
 
     optionsView.pipe(appView);
 
-    mainContext.setPerspective(500);
-    mainContext.add(appView);
-    mainContext.add(optionsModifier).add(optionsView);
+    // * greg test *
+    var ReflowableScrollview = require('./views/reflowableScrollview');
+
+    var addReflow = function () {
+        // create a reflowable view
+        var reflowable = new ReflowableScrollview({
+            direction: Utility.Direction.Y
+        });
+
+        var arr = [];
+
+        // mainContext.add(appView);
+        // mainContext.add(optionsModifier).add(optionsView);
+        // id="collection_wrapper_2305272732" class="_3i9"
+
+
+        // get class 53
+        var class_53s = document.getElementsByClassName('_53s');
+
+        for (var i = 0; i < class_53s.length; i++) {
+            var el = class_53s[i];
+
+            el.setAttribute('style', 'width=211px');
+            var s = new Surface({
+                content: el,
+                size: [211, 211]
+            });
+
+            reflowable.subscribe(s);
+            arr.push(s);
+        }
+
+        reflowable.sequenceFrom(arr);
+        var mod = new StateModifier({
+            transform: Transform.translate(0, 420, 0)
+        });
+        mainContext.add(mod).add(reflowable);
+
+        // cleaning
+        var container = document.getElementById('collection_wrapper_2305272732');
+        var parent = container.parentNode;
+        parent.removeChild(container);
+
+        // var famousContainer = document.getElementsByClassName('famous-container')[0];
+        // parent.appendChild(famousContainer);
+    };
+    console.log('executed?');
+    window.addReflow = addReflow;
+    addReflow();
 });

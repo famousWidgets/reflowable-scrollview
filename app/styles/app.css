@@ -6,3 +6,22 @@ html {
   -webkit-backface-visibility: visible;
   backface-visibility: visible;
 }
+
+.fbpics {
+   padding: 0px 0px 0px 0;
+   border: 1px solid #fff;
+   outline: 1px solid #000;
+   margin: 2px;
+   width: 211px;
+   height: 206px;
+   display: block;
+}
+
+.famous-container {
+  top: 87px;
+}
+
+/*.fbpics {
+  positiion: relative;
+  clip: rect(0, 100px, 100px, 0);
+}*/

@@ -7,7 +7,7 @@ define(function(require, exports, module) {
     var ReflowableScrollview = require('views/reflowableScrollview');
     var Utility = require('famous/utilities/Utility');
     var Easing = require('famous/transitions/Easing');
-
+    var ImageSurface = require('famous/surfaces/ImageSurface');
 
     /*
      * @name AppView
@@ -17,7 +17,8 @@ define(function(require, exports, module) {
 
     function AppView() {
         View.apply(this, arguments);
-        createScrollView.call(this);
+        // createScrollView.call(this);
+        createScrollViewFB.call(this);
         _setListeners.call(this);
         this.curveCounter = 0;
         this.curveArray = [Easing.outBounce,Easing.inSine, Easing.inOutExpo];
@@ -69,6 +70,40 @@ define(function(require, exports, module) {
         this.reflowable.sequenceFrom(logos);
         this.add(this.reflowable);
     }
+
+    // creates fb gallery of photos
+    function createScrollViewFB(options) {
+        this.reflowable = new ReflowableScrollview({
+            gutter: false,
+            direction: Utility.Direction.Y,
+            animate: false
+        });
+
+        var fbPics = [];
+
+        var sizeCounter = 1;
+        for (var i = 1; i < 48; i += 1) {
+            var item = 'fb' + i + '.jpg';
+            var link = '<img class="fbpics" width="208" src="../content/facebookPics/' + item + '" style="background-image: url(/content/facebookPics/' + item + ')"' +  '/>';
+            var pic = new Surface({
+                // content: "<i style="background-image: url(https://scontent-a-sjc.xx.fbcdn.net/hphotos-frc1/l/t1.0-9/p417x417/10169464_10101570704871645_4836953729694999531_n.jpg);" class="uiMediaThumbImg"></i>"
+                content: link,
+                size: [208, 206]
+            });
+
+            this.reflowable.subscribe(pic);
+            fbPics.push(pic);
+        }
+
+        var mod = new StateModifier({
+            transform: Transform.translate(0, 420, 0) 
+        });
+
+        this.reflowable.sequenceFrom(fbPics);
+        this.add(mod).add(this.reflowable);
+    }
+
+    // background color for fb: #e9eaed
 
     function _setListeners() {
 
