@@ -22,9 +22,11 @@ define(function(require, exports, module) {
         addReflow.call(this);
         _setListeners.call(this);
         this.curveCounter = 0;
-        this.curveArray = [Easing.outBounce,Easing.inSine, Easing.inOutExpo, Easing.inElastic];
+        this.curveArray = [Easing.inSine, Easing.inOutBounce, Easing.inElastic];
         this.clean = clean.bind(this);
         window.clean = clean;
+
+        this.stop = stop.bind(this);
 
         this.speedArray = [1000, 3000];
         this.speedCounter = 0;
@@ -86,10 +88,10 @@ define(function(require, exports, module) {
         this.fbarr = [];
 
         // get class 53
-        var class_53s = document.getElementsByClassName('_53s');
+        this.class_53s = document.getElementsByClassName('_53s');
 
-        for (var i = 0; i < class_53s.length; i++) {
-            var el = class_53s[i];
+        for (var i = 0; i < this.class_53s.length; i++) {
+            var el = this.class_53s[i];
 
             el.setAttribute('style', 'width=211px');
             var s = new Surface({
@@ -128,15 +130,15 @@ define(function(require, exports, module) {
 
     function stop () {
         var stopArr = [];
-        for (var i = 0; i < this.fbarr.length; i++) {
-            var hr = new Surface({
+        for (var i = 0; i < 48; i++) {
+            var hr = new ImageSurface({
                 content: '../content/images/hack_reactor.png',
                 size: [206, 206]
             });
             stopArr.push(hr);
         }
 
-        this.fbarr = stopArr;
+        this.reflowable.sequenceFrom(stopArr);
     }
 
     console.log('executed');
@@ -203,10 +205,11 @@ define(function(require, exports, module) {
             this.clean();
         }.bind(this));
 
+        // stop listener
         this._eventInput.on('stop', function () {
             console.log('stop');
-            this.reflowable.setOptions({animate: false});
-        })
+            this.stop();
+        }.bind(this));
 
     }
 

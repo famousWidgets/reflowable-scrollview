@@ -133,13 +133,14 @@ define(function(require, exports, module) {
             console.log('fade');
             this._eventOutput.emit('speed me');
         }.bind(this));
+
         this.animateButton.on('click', function() {
             console.log('fade');
             this._eventOutput.emit('animate');
         }.bind(this));
 
         // stop
-        this.animateButton.on('click', function() {
+        this.stopButton.on('click', function() {
             console.log('stop');
             this._eventOutput.emit('stop');
         }.bind(this));
