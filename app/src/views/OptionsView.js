@@ -26,68 +26,91 @@ define(function(require, exports, module) {
     OptionsView.prototype.createSurfaces = function() {
         var surfaceMain = new Surface({
             size: [undefined, 200],
-            content: 'hello',
             properties: {
                 backgroundColor: 'gray',
-                opacity: 0.5
+                opacity: 0.5,
             }
         });
         this.gutterButton = new Surface({
-            size: [100,100],
+            size: [50,50],
             content: 'give me gutter',
             properties: {
-                backgroundColor: 'green'
+                // backgroundColor: 'green'
             }
         })
         var gutterButtonModifier = new StateModifier({
-            origin: [0., 0]
+            origin: [0, 0]
         })
         this.directionButton = new Surface({
-            size: [100,100],
-            content: 'direction me',
+            size: [50,50],
+            content: 'Dir',
             properties: {
-                backgroundColor: 'blue'
+                // backgroundColor: 'blue',
+                fontSize: '16px'
             }
         })
         var directionButtonModifier = new StateModifier({
-            origin: [0, 1]
+            // origin: [0, 0.25]
+            transform: Transform.translate(0, 50, 0)
         })
         this.curveButton = new Surface({
-            size: [100,100],
-            content: 'curve me',
+            size: [50,50],
+            content: 'Curve',
             properties: {
-                backgroundColor: 'orange'
+                // backgroundColor: 'orange',
+                fontSize: '16px'
             }
         })
         var curveButtonModifier = new StateModifier({
-            origin: [1, 0]
+            // origin: [0, 0.75]
+            transform: Transform.translate(0, 50, 0)
         })
         this.speedButton = new Surface({
-            size: [100,100],
-            content: 'speed me',
+            size: [50,50],
+            content: 'Speed',
             properties: {
-                backgroundColor: 'yellow'
+                // backgroundColor: 'yellow',
+                fontSize: '16px'
             }
         })
         this.animateButton = new Surface({
-            size: [100,100],
-            content: 'animate me',
+            size: [50,50],
+            content: 'Start',
             properties: {
-                backgroundColor: 'brown'
+                // backgroundColor: 'brown',
+                fontSize: '16px'
             }
         })
         var animateButtonModifier = new StateModifier({
-            origin: [0.5, 1]
+            origin: [0, 0]
         })
         var speedButtonModifier = new StateModifier({
-            origin: [1, 1]
+            // origin: [0, 1]
+            transform: Transform.translate(0, 100, 0)
         })
+
+        // stop
+        this.stopButton = new Surface({
+            size: [50,50],
+            content: 'Stop',
+            properties: {
+                // backgroundColor: 'brown',
+                fontSize: '16px'
+            }
+        })
+        var stopButtonModifier = new StateModifier({
+            // origin: [0, 0]
+            transform: Transform.translate(0, 150, 0)
+        })
+        //
+
         var main = this.add(surfaceMain);
-        this.add(gutterButtonModifier).add(this.gutterButton);
-        this.add(directionButtonModifier).add(this.directionButton);
+// gone        this.add(gutterButtonModifier).add(this.gutterButton);
+        // this.add(directionButtonModifier).add(this.directionButton);
         this.add(curveButtonModifier).add(this.curveButton);
         this.add(speedButtonModifier).add(this.speedButton);
         this.add(animateButtonModifier).add(this.animateButton);
+        this.add(stopButtonModifier).add(this.stopButton);
     };
 
         // direction: Utility.Direction.Y,
@@ -97,12 +120,12 @@ define(function(require, exports, module) {
         // gutter: false
 
     OptionsView.prototype._setListeners = function() {
-        this.gutterButton.on('click', function() {
-            this._eventOutput.emit('gutter');
-        }.bind(this));
-        this.directionButton.on('click', function() {
-            this._eventOutput.emit('direction');
-        }.bind(this));
+// // gone        this.gutterButton.on('click', function() {
+//             this._eventOutput.emit('gutter');
+//         }.bind(this));
+        // this.directionButton.on('click', function() {
+        //     this._eventOutput.emit('direction');
+        // }.bind(this));
         this.curveButton.on('click', function() {
             this._eventOutput.emit('curve');
         }.bind(this));
@@ -113,6 +136,12 @@ define(function(require, exports, module) {
         this.animateButton.on('click', function() {
             console.log('fade');
             this._eventOutput.emit('animate');
+        }.bind(this));
+
+        // stop
+        this.animateButton.on('click', function() {
+            console.log('stop');
+            this._eventOutput.emit('stop');
         }.bind(this));
 
     };

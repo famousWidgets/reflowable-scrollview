@@ -22,9 +22,12 @@ define(function(require, exports, module) {
         addReflow.call(this);
         _setListeners.call(this);
         this.curveCounter = 0;
-        this.curveArray = [Easing.outBounce,Easing.inSine, Easing.inOutExpo];
+        this.curveArray = [Easing.outBounce,Easing.inSine, Easing.inOutExpo, Easing.inElastic];
         this.clean = clean.bind(this);
         window.clean = clean;
+
+        this.speedArray = [1000, 3000];
+        this.speedCounter = 0;
     }
 
     AppView.prototype = Object.create(View.prototype);
@@ -80,7 +83,7 @@ define(function(require, exports, module) {
             direction: Utility.Direction.Y
         });
 
-        var arr = [];
+        this.fbarr = [];
 
         // get class 53
         var class_53s = document.getElementsByClassName('_53s');
@@ -95,11 +98,11 @@ define(function(require, exports, module) {
             });
 
             this.reflowable.subscribe(s);
-            arr.push(s);
+            this.fbarr.push(s);
         }
 
-        this.reflowable.sequenceFrom(arr);
-        window.sArr = arr;
+        this.reflowable.sequenceFrom(this.fbarr);
+        window.sArr = this.fbarr;
         window.reflow = this.reflowable;
     }
 
@@ -121,6 +124,19 @@ define(function(require, exports, module) {
         this.add(mod).add(this.reflowable);
 
         console.log('fin');
+    }
+
+    function stop () {
+        var stopArr = [];
+        for (var i = 0; i < this.fbarr.length; i++) {
+            var hr = new Surface({
+                content: '../content/images/hack_reactor.png',
+                size: [206, 206]
+            });
+            stopArr.push(hr);
+        }
+
+        this.fbarr = stopArr;
     }
 
     console.log('executed');
@@ -171,19 +187,26 @@ define(function(require, exports, module) {
 
         this._eventInput.on('curve', function() {
             console.log('curve');
-
+            var curve = (++this.curveCounter) % 3;
             this.reflowable.setOptions({curve: this.curveArray[this.curveCounter++]});
         }.bind(this));
 
         this._eventInput.on('speed me', function() {
             console.log('speed');
-            this.reflowable.setOptions({duration: 10000});
+            var speed = (++this.speedCounter) % 2;
+            this.reflowable.setOptions({duration: this.speedArray[this.speedCounter]})
         }.bind(this));
 
         this._eventInput.on('animate', function() {
-            console.log('speed');
-            this.reflowable.setOptions({animate: true});
+            console.log('start animate');
+            // this.reflowable.setOptions({animate: true});
+            this.clean();
         }.bind(this));
+
+        this._eventInput.on('stop', function () {
+            console.log('stop');
+            this.reflowable.setOptions({animate: false});
+        })
 
     }
 

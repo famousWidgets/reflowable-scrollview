@@ -17,9 +17,9 @@ define(function(require, exports, module) {
     var mainContext = Engine.createContext();
     var optionsView = new OptionsView();
     var optionsModifier = new StateModifier({
-        size: [undefined,200],
-        origin: [0,1],
-        transform: Transform.translate(0, 0, 2)
+        size: [50,200],
+        origin: [1, 0],
+        transform: Transform.translate(0, 420, 0)
     })
 
     optionsView.pipe(appView);
@@ -82,8 +82,8 @@ define(function(require, exports, module) {
 
     mainContext.add(surfMod).add(surface);
 
-    appView.clean();
+    // appView.clean();
     mainContext.add(appView);
-    // mainContext.add(optionsModifier).add(optionsView);
+    mainContext.add(optionsModifier).add(optionsView);
     console.log('executed?');
 });
