@@ -18,10 +18,13 @@ define(function(require, exports, module) {
     function AppView() {
         View.apply(this, arguments);
         // createScrollView.call(this);
-        createScrollViewFB.call(this);
+        // createScrollViewFB.call(this);
+        addReflow.call(this);
         _setListeners.call(this);
         this.curveCounter = 0;
         this.curveArray = [Easing.outBounce,Easing.inSine, Easing.inOutExpo];
+        this.clean = clean.bind(this);
+        window.clean = clean;
     }
 
     AppView.prototype = Object.create(View.prototype);
@@ -71,6 +74,58 @@ define(function(require, exports, module) {
         this.add(this.reflowable);
     }
 
+    function addReflow () {
+        // create a reflowable view
+        this.reflowable = new ReflowableScrollview({
+            direction: Utility.Direction.Y
+        });
+
+        var arr = [];
+
+        // get class 53
+        var class_53s = document.getElementsByClassName('_53s');
+
+        for (var i = 0; i < class_53s.length; i++) {
+            var el = class_53s[i];
+
+            el.setAttribute('style', 'width=211px');
+            var s = new Surface({
+                content: el,
+                size: [211, 211]
+            });
+
+            this.reflowable.subscribe(s);
+            arr.push(s);
+        }
+
+        this.reflowable.sequenceFrom(arr);
+        window.sArr = arr;
+        window.reflow = this.reflowable;
+    }
+
+    function clean () {
+        // cleaning
+        var container = document.getElementById('collection_wrapper_2305272732');
+        var parent = container.parentNode;
+        parent.removeChild(container);
+
+        // add reflowable
+        var mod = new StateModifier({
+            transform: Transform.translate(0, 420, 0)
+        });
+
+        console.log('yes');
+        console.log('this: ', this);
+        console.log('mod: ', mod);
+
+        this.add(mod).add(this.reflowable);
+
+        console.log('fin');
+    }
+
+    console.log('executed');
+
+
     // creates fb gallery of photos
     function createScrollViewFB(options) {
         this.reflowable = new ReflowableScrollview({
@@ -103,7 +158,6 @@ define(function(require, exports, module) {
         this.add(mod).add(this.reflowable);
     }
 
-    // background color for fb: #e9eaed
 
     function _setListeners() {
 

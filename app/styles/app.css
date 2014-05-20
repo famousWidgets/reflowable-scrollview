@@ -19,7 +19,16 @@ html {
 
 .famous-container {
   top: 87px;
+  z-index: 2;
 }
+
+/*#contentCol {
+  z-index: -5;
+}
+
+#pagelet_timeline_main_column {
+  z-index: -5;
+}*/
 
 /*.fbpics {
   positiion: relative;
