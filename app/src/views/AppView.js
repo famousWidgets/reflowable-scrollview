@@ -22,7 +22,7 @@ define(function(require, exports, module) {
         addReflow.call(this);
         _setListeners.call(this);
         this.curveCounter = 0;
-        this.curveArray = [Easing.outBounce,Easing.inSine, Easing.inOutExpo, Easing.inElastic];
+        this.curveArray = [Easing.inSine, Easing.inOutBounce, Easing.inElastic];
         this.clean = clean.bind(this);
         window.clean = clean;
 
